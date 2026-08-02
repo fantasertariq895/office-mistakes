@@ -1,0 +1,21 @@
+node_modules/
+.next/
+out/
+build/
+next-env.d.ts
+*.tsbuildinfo
+
+# Secrets — DATABASE_URL, SESSION_SECRET, CRON_SECRET, INITIAL_PIN. Never commit.
+.env
+.env.local
+.env.*.local
+
+# Local data — contains real client / commission data. Never commit.
+prisma/*.db
+prisma/*.db-journal
+prisma/migrations/
+backups/
+
+.DS_Store
+*.log
+npm-debug.log*

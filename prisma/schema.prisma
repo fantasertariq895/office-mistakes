@@ -1,0 +1,137 @@
+// Personal Office Operations Dashboard — data model (PRD §5)
+//
+// Postgres (Neon / Vercel Postgres) so the same database works both locally
+// and once deployed — Vercel's serverless filesystem is read-only, so the
+// original SQLite file can't live there. DATABASE_URL is the pooled
+// connection (used by the app at request time); DIRECT_URL is the unpooled
+// one Prisma needs for `db push`/migrations. Neon gives you both.
+//
+// There's no native enum support in play here, so enum-ish columns are stored
+// as String and validated in lib/constants.ts. Fields marked "[addition]" are
+// not in the PRD but are required to make the specified behaviour work;
+// everything else maps 1:1 to PRD §5.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Commission {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  color       String   @default("#6B7280")
+  description String?
+  sortOrder   Int      @default(0) // [addition] stable ordering in the UI
+  createdAt   DateTime @default(now())
+
+  checklistItems       ChecklistItem[]
+  mistakes             MistakeLogEntry[]
+  contacts             Contact[]
+  approvalRequirements ApprovalRequirement[]
+  tasks                Task[]
+}
+
+model ChecklistItem {
+  id           Int       @id @default(autoincrement())
+  commissionId Int? // null = universal (Mistake Prevention)
+  text         String
+  category     String?
+  isHighRisk   Boolean   @default(false)
+  isCustom     Boolean   @default(false)
+  checkedAt    DateTime? // [addition] persists tick state between reloads; "Reset" clears it
+  sortOrder    Int       @default(0) // [addition]
+  createdAt    DateTime  @default(now())
+
+  commission Commission? @relation(fields: [commissionId], references: [id], onDelete: Cascade)
+
+  @@index([commissionId])
+}
+
+model MistakeLogEntry {
+  id           Int      @id @default(autoincrement())
+  commissionId Int
+  text         String
+  dateLogged   DateTime @default(now())
+  resolved     Boolean  @default(false)
+
+  commission Commission @relation(fields: [commissionId], references: [id], onDelete: Cascade)
+
+  @@index([commissionId])
+}
+
+model Contact {
+  id           Int     @id @default(autoincrement())
+  commissionId Int
+  name         String
+  role         String?
+  email        String?
+  phone        String?
+
+  commission Commission @relation(fields: [commissionId], references: [id], onDelete: Cascade)
+
+  @@index([commissionId])
+}
+
+model ApprovalRequirement {
+  id           Int    @id @default(autoincrement())
+  commissionId Int
+  description  String
+
+  commission Commission @relation(fields: [commissionId], references: [id], onDelete: Cascade)
+
+  @@index([commissionId])
+}
+
+model Task {
+  id           Int       @id @default(autoincrement())
+  title        String
+  description  String?
+  priority     String    @default("medium") // low | medium | high
+  status       String    @default("not_started") // not_started | in_progress | completed | waiting
+  dueDate      DateTime?
+  commissionId Int?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  completedAt  DateTime?
+
+  commission Commission? @relation(fields: [commissionId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([dueDate])
+  @@index([commissionId])
+}
+
+model NotificationRule {
+  id      Int     @id @default(autoincrement())
+  type    String // task_due | task_overdue | daily_digest
+  channel String // in_app | email | whatsapp
+  enabled Boolean @default(false)
+
+  @@unique([type, channel])
+}
+
+model Settings {
+  id                   Int      @id @default(1) // singleton row
+  pinHash              String? // format: scrypt$<saltHex>$<hashHex>
+  // Bumped whenever the PIN is set/changed/removed. Session tokens embed the
+  // version they were issued under (see lib/auth.ts) — bumping this is how
+  // "sign out everywhere" works without a server-side session store, which
+  // matters once this runs on stateless serverless instances.
+  sessionVersion       Int      @default(1)
+  // "YYYY-MM" of the last automatic checklist reset. Null means it hasn't run
+  // yet — the first run only records the current month, it does not reset
+  // (so shipping this feature doesn't wipe ticks mid-month on existing data).
+  checklistsResetMonth String?
+  notificationChannels String   @default("[\"in_app\"]") // JSON array
+  quietHoursStart      String? // "HH:MM" local, null = no quiet hours
+  quietHoursEnd        String?
+  emailSmtpConfig      String? // JSON — Phase 2, unused in MVP
+  whatsappConfig       String? // JSON — Phase 3, unused in MVP
+  theme                String   @default("light") // light | dark
+  updatedAt            DateTime @updatedAt
+}

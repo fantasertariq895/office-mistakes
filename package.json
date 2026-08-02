@@ -1,0 +1,40 @@
+{
+  "name": "office-ops-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Personal office operations dashboard — tasks + commission mistake prevention (Phase 1 MVP)",
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
+    "dev:turbo": "next dev",
+    "build:turbo": "next build",
+    "vercel-build": "prisma generate && next build",
+    "start": "next start",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:DANGER-erase-all-tasks-and-mistakes-then-reseed": "prisma db push --force-reset --accept-data-loss && tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "setup": "prisma generate && prisma db push && tsx prisma/seed.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3",
+    "next": "16.2.12",
+    "node-cron": "4.6.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "prisma": "6.19.3",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
