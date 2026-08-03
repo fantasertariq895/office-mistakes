@@ -1,44 +1,60 @@
 /**
- * All date handling is calendar-day based in the machine's local timezone.
+ * Due dates are pure calendar dates — "August 4th" — with no time-of-day or
+ * timezone meaning attached. They're stored as UTC midnight of the chosen
+ * day and read back the same way, so the calendar day never depends on which
+ * timezone happened to parse or display it.
  *
- * Due dates are stored as the local-midnight instant of the chosen day, so
- * "overdue"/"due today"/"upcoming" are pure calendar-day comparisons and never
- * depend on the time of day.
+ * That distinction matters here specifically: API routes run on a server
+ * (UTC on Vercel) while the UI runs in the visitor's browser (their own
+ * timezone). A due date built with *local* midnight on the server landed on
+ * a different calendar day once read back with *local* getters in the
+ * browser — a date picked as "Aug 4" would save and redisplay as "Aug 3" for
+ * anyone west of UTC. Every function below that touches a due date
+ * (fromDateInputValue, toDateInputValue, startOfDay/endOfDay, daysBetween,
+ * relativeDayLabel/formatCalendarDay) is UTC-anchored on purpose, so the
+ * calendar day round-trips identically everywhere.
+ *
+ * Real timestamps — when a task was completed, when a mistake was logged —
+ * are a different thing: a genuine instant, correctly shown in the viewer's
+ * own local time. formatDay/formatFullDate/formatDateTime are for those and
+ * deliberately unaffected by any of this.
  */
 
 export function startOfDay(d: Date | string = new Date()): Date {
   const date = typeof d === "string" ? new Date(d) : new Date(d.getTime());
-  date.setHours(0, 0, 0, 0);
-  return date;
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+  );
 }
 
 export function endOfDay(d: Date | string = new Date()): Date {
   const date = typeof d === "string" ? new Date(d) : new Date(d.getTime());
-  date.setHours(23, 59, 59, 999);
-  return date;
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999)
+  );
 }
 
 export function addDays(d: Date, days: number): Date {
   const date = new Date(d.getTime());
-  date.setDate(date.getDate() + days);
+  date.setUTCDate(date.getUTCDate() + days);
   return date;
 }
 
-/** "YYYY-MM-DD" in local time — the value an <input type="date"> expects. */
+/** "YYYY-MM-DD" for the calendar day this (UTC-anchored) date represents. */
 export function toDateInputValue(d: Date | string | null | undefined): string {
   if (!d) return "";
   const date = typeof d === "string" ? new Date(d) : d;
   if (Number.isNaN(date.getTime())) return "";
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
 }
 
-/** Parse "YYYY-MM-DD" as local midnight (not UTC, which `new Date(str)` does). */
+/** Parse "YYYY-MM-DD" as UTC midnight — see the module doc for why UTC, not local. */
 export function fromDateInputValue(value: string): Date | null {
   if (!value) return null;
   const [y, m, d] = value.split("-").map(Number);
   if (!y || !m || !d) return null;
-  return new Date(y, m - 1, d, 0, 0, 0, 0);
+  return new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
 }
 
 export function daysBetween(a: Date | string, b: Date | string): number {
@@ -68,6 +84,16 @@ const DAY_FMT = new Intl.DateTimeFormat(undefined, {
   month: "short",
 });
 
+// Same format as DAY_FMT, but pinned to UTC so a calendar-day value (a due
+// date) reads as the day it was picked, not whatever day that UTC instant
+// happens to fall on in the viewer's own timezone.
+const CALENDAR_DAY_FMT = new Intl.DateTimeFormat(undefined, {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  timeZone: "UTC",
+});
+
 const FULL_FMT = new Intl.DateTimeFormat(undefined, {
   weekday: "long",
   day: "numeric",
@@ -80,10 +106,18 @@ const TIME_FMT = new Intl.DateTimeFormat(undefined, {
   minute: "2-digit",
 });
 
+/** For real timestamps (dateLogged, completedAt) — shown in the viewer's local time. */
 export function formatDay(d: Date | string | null | undefined): string {
   if (!d) return "No due date";
   const date = typeof d === "string" ? new Date(d) : d;
   return DAY_FMT.format(date);
+}
+
+/** For due dates (calendar days) — shown as the day it was picked, timezone-independent. */
+export function formatCalendarDay(d: Date | string | null | undefined): string {
+  if (!d) return "No due date";
+  const date = typeof d === "string" ? new Date(d) : d;
+  return CALENDAR_DAY_FMT.format(date);
 }
 
 export function formatFullDate(d: Date | string = new Date()): string {
@@ -105,7 +139,7 @@ export function relativeDayLabel(d: Date | string | null | undefined): string {
   if (diff === -1) return "Yesterday";
   if (diff < 0) return `${Math.abs(diff)} days overdue`;
   if (diff <= 7) return `In ${diff} days`;
-  return formatDay(d);
+  return formatCalendarDay(d);
 }
 
 /** "HH:MM" → minutes since local midnight. */
