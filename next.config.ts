@@ -6,8 +6,13 @@ const nextConfig: NextConfig = {
   // instrumentation).
   serverExternalPackages: ["@prisma/client", ".prisma/client", "node-cron"],
 
-  // Only used by the webpack build (see package.json — Turbopack's native
-  // bindings are blocked by an Application Control policy on this machine).
+  // Only takes effect on webpack builds — every `build`/`dev` script (local
+  // and vercel-build) passes --webpack, both because this machine's Windows
+  // Application Control policy blocks Turbopack's native bindings, and
+  // because Next 16 refuses to build under Turbopack at all once it sees a
+  // custom `webpack` key here with no matching `turbopack` key, treating the
+  // combination as a likely mistake. Simplest fix was consistency: use
+  // --webpack everywhere so there's one code path, not two to keep in sync.
   //
   // instrumentation.ts is compiled for the edge runtime as well as node, and
   // webpack tries to follow the dynamic import of node-cron into that bundle,
