@@ -14,6 +14,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed-traffic-billing": "tsx prisma/seed-traffic-billing.ts",
     "db:DANGER-erase-all-tasks-and-mistakes-then-reseed": "prisma db push --force-reset --accept-data-loss && tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "setup": "prisma generate && prisma db push && tsx prisma/seed.ts",

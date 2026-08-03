@@ -175,6 +175,28 @@ export const IconChevron = (p: Props) => (
   </Svg>
 );
 
+/** N/A — a step that legitimately doesn't apply this month. */
+export const IconBan = (p: Props) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="m5.6 5.6 12.8 12.8" />
+  </Svg>
+);
+
+export const IconArrowRight = (p: Props) => (
+  <Svg {...p}>
+    <path d="M4 12h16" />
+    <path d="m14 6 6 6-6 6" />
+  </Svg>
+);
+
+export const IconArrowLeft = (p: Props) => (
+  <Svg {...p}>
+    <path d="M20 12H4" />
+    <path d="m10 6-6 6 6 6" />
+  </Svg>
+);
+
 export const IconSun = (p: Props) => (
   <Svg {...p}>
     <circle cx="12" cy="12" r="4" />

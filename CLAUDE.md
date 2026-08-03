@@ -63,6 +63,114 @@ The user's last multi-part ask was: (1) automatic monthly checklist reset,
    polish, or whether the existing design already satisfies that ask** —
    don't assume either answer.
 
+## Traffic Billing workspace (second tab, `/traffic-billing`)
+
+A separate execution workspace for the monthly Traffic Billing SOP — **39
+phases, 331 steps, 39 "mistakes to avoid"**. It shares the shell (sidebar,
+theme, toasts, lock) and nothing else: **it does not touch Commission,
+ChecklistItem, Task or any existing route.**
+
+**Sources.** Originally seeded from [Traffic Billing SOP.md](Traffic%20Billing%20SOP.md),
+then extended from two training-transcript documents
+(`TRFFK_Billing_Complete_Documentation_Sessions_1_to_3.md` and
+`TRFFK_Billing_Sessions_1_to_3_03_Walkthrough_by_Sections.md`). Where the two
+disagreed the user ruled explicitly, and those rulings are load-bearing —
+do not "correct" them back from the training docs:
+- Final batches go to **Ryan**, CC Gagan Roop and Duska Adzovic (the training
+  docs say DSS Billing; the user's version is current).
+- **Nissan/Infiniti use New and Used only** — not the docs' "avoid Other /
+  Finance / Acquisition" framing.
+- The post-decision summary to Mahi / Marie-Christine / Justin is
+  **deliberately not included**.
+- "Exclude FCA" in the OEM phases is correct *and* FCA is billed — the
+  exclusion is scoped to the OEM/Other-OEM filters. Phase 34 is its own FCA
+  path. Getting this wrong means never invoicing FCA.
+- `Step 3.1` / `5.1` / `6A` etc. already carry their full sheet names; the
+  training docs' "roll-up / adjusted tabs" vocabulary is the same thing.
+  Use the `Step X.Y <Sheet Name>` form for anything new.
+
+**Still unresolved** (raised, not yet ruled on): whether to add the
+reconciliation file stage, a standalone Google fee phase, the combined
+Cam Clark / Superior Auto Group and JLR batch files, and the
+Demand Gen / Display splits. Phase 34 references the Google fee because
+FCA's fee rule depends on it, but there is no Google fee phase of its own.
+The exact sheet name for the Adjusted FCA Billing tab is also unconfirmed.
+
+- **Its own tables, on purpose** (`TrafficBilling*` in `prisma/schema.prisma`).
+  Two reasons, both load-bearing:
+  1. `lib/monthly-reset.ts` unticks *every* `ChecklistItem` with no
+     `commissionId` filter. A month-long 304-step procedure whose ticks are
+     the record of what was done cannot live in a table that gets wiped on
+     the 1st.
+  2. Traffic Billing has a **run** dimension — one execution per billing
+     month, kept indefinitely — that `ChecklistItem.checkedAt` (a single
+     mutable slot) can't express.
+- **Content in the DB, seeded from code.** `lib/traffic-billing/sop-template.ts`
+  is the seed; `prisma/seed-traffic-billing.ts` writes it in, matching on a
+  stable `key` so it's idempotent and **never overwrites an in-app edit**.
+  Steps/phases/mistakes are all editable and addable in the UI (user's
+  explicit requirement). Re-run with `npm run db:seed-traffic-billing` — safe
+  any time, adds only what's missing.
+- **Custom rows get a `custom-` key prefix** so they can't collide with a
+  seeded `<phaseKey>-sNN` key. A collision would make the seed *skip* a real
+  SOP step, which is the quiet failure mode to avoid here.
+- **A key is bound to its content for life.** The seed matches on key, so
+  reusing an existing key for different wording silently skips the new step
+  and leaves the old one — this was nearly shipped when the Social alignment
+  step was given the Shopping step's `s16`. New steps get new keys; order
+  comes from array position, never from key order.
+- **Phase `number` is derived from position in `SOP_PHASES`**, and the seed
+  re-syncs `number`/`sortOrder`/`stageKey` on every run. That is what lets a
+  phase be inserted mid-list (Phase 1 and Phase 34 both were) without
+  renumbering 37 objects by hand. `title`, `intro` and step `text` are
+  deliberately **never** re-synced — those are what the user edits in the
+  app, and re-seeding must not revert their wording.
+- **Tri-state steps** (`open`/`done`/`na`), not checkboxes. The SOP says
+  "applicable"/"where applicable" throughout; without N/A a month that
+  skipped a branch reads as permanently incomplete. **N/A counts as settled**
+  in every progress figure (`lib/traffic-billing/progress.ts`) — that rule
+  lives in one place so the rail, header and phase card can't disagree.
+- **State rows are created lazily.** A step with no row is "open", so
+  starting a month is one insert, not 304.
+- **The client supplies the month**, server never computes "this month"
+  (`lib/traffic-billing/month.ts`). Same UTC-vs-viewer trap `lib/date.ts`
+  documents: near a month boundary the server's month and the viewer's
+  disagree. `formatMonthLabel` also deliberately never builds a `Date` from
+  "YYYY-MM" — `new Date("2026-08")` is UTC midnight on the 1st, which renders
+  as *July* west of UTC.
+- **Soft gating on "Next phase".** The SOP says "do not continue until…", but
+  hard-blocking a 304-step process teaches people to tick boxes they haven't
+  done. Warn once, then allow.
+- **Completed runs render read-only** so a past month can be read back
+  without being silently rewritten.
+- **Transcription rules** (how the irregular markdown was mapped) are
+  documented at the top of `lib/traffic-billing/sop-template.ts` — read that
+  before re-syncing the `.md`. The one deliberate deviation: Phase 1's file
+  list was promoted from reference bullets to real per-file checkboxes.
+
+Responsive behaviour, measured at 375 / 768 / 1280 rather than assumed:
+- Below 900px the layout collapses to one column and the rail moves **below**
+  the phase card (`order: 2`). Stacked above, 37 entries put ~320px of index
+  between the top of the screen and the first step.
+- `.nav-sub` (the "Aug 2026 · 62%" caption) is hidden below 760px, where the
+  sidebar collapses to a 62px icon rail — it overflowed before.
+- `.tb-step-text` has `min-width: 140px` and `.tb-step-main` wraps. On touch
+  the action row is permanently visible and ~166px wide, which squeezed the
+  step text to a **17px** column; the floor makes the actions wrap instead.
+- `.tb-step-actions` is `opacity: 0` **and `pointer-events: none`** when
+  hidden. Without the second half there's an invisible-but-tappable Delete
+  beside every step — the same trap `.check-actions` guards against, and it
+  was live here until it got measured.
+- Touch targets bumped to 38–44px under `(hover: none), (pointer: coarse)`,
+  scoped to `.tb-*` so the rest of the app keeps its audited sizing.
+
+Verified end-to-end against the live API (not just the rendered UI): run
+create is idempotent on month, invalid month/state/status are rejected 400,
+per-month state is isolated, a completed month's ticks and notes survive the
+next month starting, and deleting a step/phase/run cascades with no orphans.
+Test runs created during that check were deleted afterwards — the SOP ships
+seeded with **zero runs**, so the first "Start <month>" is the user's.
+
 ## Architecture decisions and why (read before changing these)
 
 - **Postgres, not SQLite** (`prisma/schema.prisma`): Vercel serverless
@@ -143,9 +251,10 @@ The user's last multi-part ask was: (1) automatic monthly checklist reset,
   scripts like `db:DANGER-erase-all-tasks-and-mistakes-then-reseed` locally).
 - **`--webpack` in `dev`/`build` scripts is a workaround for this specific
   development machine** (a Windows Application Control policy blocks
-  Turbopack's native binary), not a project requirement. Vercel's build uses
-  plain `next build` (Turbopack) via the separate `vercel-build` script,
-  since Vercel's Linux build servers have no such restriction.
+  Turbopack's native binary), not a project requirement. `vercel-build`
+  currently also passes `--webpack` (it is `prisma generate && next build
+  --webpack`); `dev:turbo`/`build:turbo` are the Turbopack escape hatches if
+  you ever want them.
 - **Clear `.next` before typechecking/building after deleting or renaming any
   route file.** Next generates route-type files under `.next/types` that
   reference the old path and fail `tsc --noEmit` with a confusing "cannot

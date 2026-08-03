@@ -6,6 +6,21 @@ const nextConfig: NextConfig = {
   // instrumentation).
   serverExternalPackages: ["@prisma/client", ".prisma/client", "node-cron"],
 
+  // Lets you open the dev server from another device on the LAN (phone testing
+  // via the "Network:" URL `next dev` prints). Next 16 blocks cross-origin
+  // requests for /_next/* dev resources by default, and the failure mode is
+  // nasty: the HTML still returns 200 while every JS chunk is refused, so the
+  // page renders as a blank white screen with only an HMR websocket error in
+  // the console. Dev-only — this key has no effect on the Vercel build.
+  //
+  // Private LAN ranges rather than one hard-coded IP, since DHCP reassigns it.
+  allowedDevOrigins: [
+    "10.0.0.*",
+    "192.168.0.*",
+    "192.168.1.*",
+    "172.16.0.*",
+  ],
+
   // Only takes effect on webpack builds — every `build`/`dev` script (local
   // and vercel-build) passes --webpack, both because this machine's Windows
   // Application Control policy blocks Turbopack's native bindings, and

@@ -67,6 +67,34 @@ export const COMMISSION_COLORS = [
   "#6B7280",
 ];
 
+/* ---------------------------------------------------------- Traffic Billing */
+
+/**
+ * Three states, not a checkbox. The SOP says "applicable" or "where
+ * applicable" throughout — without an explicit N/A, a month where (say)
+ * TikTok wasn't billed reads as permanently incomplete and the progress
+ * figure stops meaning anything.
+ */
+export const TB_STEP_STATES = ["open", "done", "na"] as const;
+export type TbStepState = (typeof TB_STEP_STATES)[number];
+
+export const TB_STEP_STATE_LABELS: Record<TbStepState, string> = {
+  open: "Not done",
+  done: "Done",
+  na: "Not applicable",
+};
+
+export const TB_RUN_STATUSES = ["in_progress", "completed"] as const;
+export type TbRunStatus = (typeof TB_RUN_STATUSES)[number];
+
+export function isTbStepState(v: unknown): v is TbStepState {
+  return typeof v === "string" && (TB_STEP_STATES as readonly string[]).includes(v);
+}
+
+export function isTbRunStatus(v: unknown): v is TbRunStatus {
+  return typeof v === "string" && (TB_RUN_STATUSES as readonly string[]).includes(v);
+}
+
 export function isTaskStatus(v: unknown): v is TaskStatus {
   return typeof v === "string" && (TASK_STATUSES as readonly string[]).includes(v);
 }

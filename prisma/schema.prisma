@@ -106,6 +106,126 @@ model Task {
   @@index([commissionId])
 }
 
+/* -------------------------------------------------------- Traffic Billing --
+ *
+ * A deliberately separate island from Commission/ChecklistItem, for two
+ * reasons that are easy to miss:
+ *
+ * 1. lib/monthly-reset.ts unticks *every* ChecklistItem with no commission
+ *    filter. Traffic Billing is a month-long, ~300-step procedure whose
+ *    completed state is the record of what was actually done — silently
+ *    wiping it on the 1st would destroy exactly the thing worth keeping.
+ * 2. Traffic Billing has a run dimension (one execution per billing month,
+ *    kept forever) that ChecklistItem's single mutable `checkedAt` can't
+ *    express.
+ *
+ * Content (phases/steps/mistakes) is seeded from "Traffic Billing SOP.md" via
+ * lib/traffic-billing/sop-template.ts but lives in the database, so steps can
+ * be edited, reordered and added in the app. State (what's ticked, in which
+ * month) is a separate table keyed by run — editing a step's wording never
+ * disturbs the history of the months it was already ticked in.
+ */
+
+model TrafficBillingPhase {
+  id        Int      @id @default(autoincrement())
+  /** Stable slug ("p04"). Seeds match on this, so re-seeding never duplicates. */
+  key       String   @unique
+  number    Int
+  /** Groups phases into the collapsible stages in the rail (see sop-template). */
+  stageKey  String
+  title     String
+  /** Lead-in prose from the SOP, e.g. "After all raw data has been entered:". */
+  intro     String?
+  sortOrder Int      @default(0)
+  isCustom  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  steps    TrafficBillingStep[]
+  mistakes TrafficBillingMistake[]
+  issues   TrafficBillingIssue[]
+}
+
+model TrafficBillingStep {
+  id         Int      @id @default(autoincrement())
+  phaseId    Int
+  key        String   @unique
+  /** Sub-heading this step sits under, e.g. "Performance Max Classification". */
+  groupLabel String?
+  text       String
+  /** JSON array of reference bullets shown under the step, not tickable. */
+  notes      String?
+  isHighRisk Boolean  @default(false)
+  isCustom   Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  phase  TrafficBillingPhase      @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  states TrafficBillingStepState[]
+
+  @@index([phaseId])
+}
+
+model TrafficBillingMistake {
+  id        Int     @id @default(autoincrement())
+  /** Null = applies to the whole SOP, not one phase. */
+  phaseId   Int?
+  text      String
+  sortOrder Int     @default(0)
+  isCustom  Boolean @default(false)
+
+  phase TrafficBillingPhase? @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+
+  @@index([phaseId])
+}
+
+/** One execution of the SOP, for one billing month. Kept indefinitely. */
+model TrafficBillingRun {
+  id          Int       @id @default(autoincrement())
+  month       String    @unique // "2026-08"
+  status      String    @default("in_progress") // in_progress | completed
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  states TrafficBillingStepState[]
+  issues TrafficBillingIssue[]
+
+  @@index([status])
+}
+
+/**
+ * Created lazily — an untouched step has no row and reads as "open". A fresh
+ * month is one insert, not 304.
+ */
+model TrafficBillingStepState {
+  id        Int      @id @default(autoincrement())
+  runId     Int
+  stepId    Int
+  state     String   @default("open") // open | done | na
+  note      String?
+  updatedAt DateTime @updatedAt
+
+  run  TrafficBillingRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  step TrafficBillingStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, stepId])
+  @@index([runId])
+}
+
+/** Something that went wrong during a run, logged against the phase it hit. */
+model TrafficBillingIssue {
+  id        Int      @id @default(autoincrement())
+  runId     Int
+  phaseId   Int
+  text      String
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  run   TrafficBillingRun   @relation(fields: [runId], references: [id], onDelete: Cascade)
+  phase TrafficBillingPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+}
+
 model NotificationRule {
   id      Int     @id @default(autoincrement())
   type    String // task_due | task_overdue | daily_digest

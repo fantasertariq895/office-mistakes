@@ -2,17 +2,35 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useFetch } from "@/lib/hooks";
+import { formatMonthShort } from "@/lib/traffic-billing/month";
 import { useApp } from "./AppProvider";
-import { IconHome, IconMoon, IconSettings, IconSun } from "./icons";
+import { IconChart, IconHome, IconMoon, IconSettings, IconSun } from "./icons";
+
+type TbSummary = {
+  run: { id: number; month: string; status: string } | null;
+  total: number;
+  settled: number;
+  percent: number;
+};
 
 /**
- * One page, so one nav item. Settings sits in the footer — it's the only route
- * to backups, the PIN lock and notification toggles, and doesn't belong in the
+ * Two workspaces: Home (tasks + commission checklists) and Traffic Billing
+ * (the monthly SOP run). Settings sits in the footer — it's the only route to
+ * backups, the PIN lock and notification toggles, and doesn't belong in the
  * daily flow.
  */
 export function Sidebar() {
   const pathname = usePathname();
-  const { counts, theme, setTheme } = useApp();
+  const { counts, theme, setTheme, version } = useApp();
+
+  // Deliberately its own tiny endpoint rather than the full workspace: the
+  // sidebar renders on every page and only needs "Aug 2026 · 62%".
+  const tb = useFetch<TbSummary>("/api/traffic-billing/summary", version);
+  const tbActive = pathname.startsWith("/traffic-billing");
+  const tbBadge = tb.data?.run
+    ? `${formatMonthShort(tb.data.run.month)} · ${tb.data.percent}%`
+    : null;
 
   const active = pathname === "/";
   const overdue = counts.overdue;
@@ -54,6 +72,26 @@ export function Sidebar() {
             aria-hidden="true"
           >
             {badge > 99 ? "99+" : badge}
+          </span>
+        )}
+      </Link>
+
+      <Link
+        href="/traffic-billing"
+        className={`nav-item${tbActive ? " active" : ""}`}
+        aria-current={tbActive ? "page" : undefined}
+        aria-label={
+          tbBadge ? `Traffic Billing — ${tbBadge} complete` : "Traffic Billing"
+        }
+        title="Traffic Billing"
+      >
+        <span className="nav-icon" aria-hidden="true">
+          <IconChart size={17} />
+        </span>
+        <span className="nav-label">Traffic Billing</span>
+        {tbBadge && (
+          <span className="nav-sub" aria-hidden="true">
+            {tbBadge}
           </span>
         )}
       </Link>
