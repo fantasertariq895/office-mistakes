@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { LOCKED_EVENT, api } from "@/lib/client";
-import { IconLock } from "./icons";
+import { IconAlert, IconLock } from "./icons";
 
 type Status = { pinSet: boolean; unlocked: boolean; forcePin: boolean };
 
@@ -12,21 +12,32 @@ type Status = { pinSet: boolean; unlocked: boolean; forcePin: boolean };
  */
 export function LockGate({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<Status | null>(null);
+  // A failed status check (missing DATABASE_URL, misconfigured env vars, the
+  // server erroring) must never render identically to a real lock screen —
+  // it was doing exactly that before, and looked like a working PIN prompt
+  // on a deployment that had never actually started.
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
-      setStatus(await api.get<Status>("/api/auth/status"));
-    } catch {
-      setStatus({ pinSet: true, unlocked: false, forcePin: false });
+      const next = await api.get<Status>("/api/auth/status");
+      setStatus(next);
+      setConnectionError(null);
+    } catch (err) {
+      setStatus(null);
+      setConnectionError(
+        err instanceof Error ? err.message : "Could not reach the server"
+      );
     }
   }, []);
 
   useEffect(() => {
     void refresh();
-    const onLocked = () => setStatus((s) => ({ ...(s ?? { pinSet: true, forcePin: false }), unlocked: false }));
+    const onLocked = () =>
+      setStatus((s) => (s ? { ...s, unlocked: false } : s));
     window.addEventListener(LOCKED_EVENT, onLocked);
     return () => window.removeEventListener(LOCKED_EVENT, onLocked);
   }, [refresh]);
@@ -46,6 +57,33 @@ export function LockGate({ children }: { children: ReactNode }) {
       setBusy(false);
     }
   };
+
+  if (connectionError) {
+    return (
+      <div className="lock-screen">
+        <div className="lock-card">
+          <div className="lock-mark" style={{ background: "var(--danger)" }}>
+            <IconAlert size={20} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: 16 }}>Can&apos;t reach the dashboard</h1>
+            <p className="small muted" style={{ marginTop: 4 }}>
+              {connectionError}
+            </p>
+          </div>
+          <p className="small subtle">
+            This isn&apos;t a lock screen — the app couldn&apos;t load your
+            data at all. On a fresh deployment this almost always means an
+            environment variable is missing or the database schema hasn&apos;t
+            been pushed yet.
+          </p>
+          <button className="btn btn-block" type="button" onClick={() => void refresh()}>
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!status) {
     return (
