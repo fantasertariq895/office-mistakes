@@ -1895,12 +1895,20 @@ p {
   flex: none;
 }
 
-
 /* ==========================================================================
-   Traffic Billing workspace
-   Same tokens as everything else — no new colours, no new radii. Layout is a
-   sticky phase rail plus one focused phase: the SOP is sequential, and 37
-   phases on screen at once is a document, not a workspace.
+   Traffic Billing — visual pass
+
+   Same tokens as the rest of the app; no new colours, no new radii, no new
+   fonts. The brief was "more stylish and simpler", so this pass mostly
+   *removes* weight rather than adding it:
+
+   - colour is reserved for meaning (done / N/A / risk / active), never for
+     decoration, matching the rule the base design system already follows
+   - one accent per view: the active phase. Everything else is neutral
+   - borders do the work that background fills were doing, so 39 phases and
+     331 steps don't read as a wall of tinted boxes
+   - progress is segmented (done vs N/A) because a flat 100% bar hides the
+     fact that a month skipped half its steps
    ========================================================================== */
 
 .nav-sub {
@@ -1911,16 +1919,138 @@ p {
   white-space: nowrap;
 }
 
-.tb-overall {
+/* ------------------------------------------------------------ progress --- */
+
+/* flex:none matters. This bar sits in a row container inside the phase card
+   but in a *column* container in the page header, and `flex: 1` there sets
+   flex-basis on the block axis — collapsing the bar to 0px tall and making it
+   silently invisible. The row case opts back in below. */
+.tb-progress {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
+  flex: none;
+  width: 100%;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--border);
+  overflow: hidden;
 }
 
-.progress-fill.complete {
-  background: var(--accent);
+.tb-phase-progress .tb-progress {
+  flex: 1 1 auto;
+  min-width: 90px;
 }
+
+.tb-progress.sm {
+  height: 4px;
+}
+
+.tb-progress-done,
+.tb-progress-na {
+  height: 100%;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tb-progress-done {
+  background: var(--success);
+}
+
+/* N/A is settled but it isn't work done — muted, so a mostly-skipped month
+   never looks like a mostly-completed one at a glance. */
+.tb-progress-na {
+  background: var(--border-strong);
+}
+
+.tb-progress.complete .tb-progress-done {
+  background: var(--success);
+}
+
+.tb-progress-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tb-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tb-legend::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.tb-legend.done::before {
+  background: var(--success);
+}
+
+.tb-legend.na::before {
+  background: var(--border-strong);
+}
+
+.tb-legend.open::before {
+  background: var(--border-strong);
+  box-shadow: inset 0 0 0 1.5px var(--surface);
+  border: 1px solid var(--border-strong);
+}
+
+.tb-legend.finished {
+  color: var(--success);
+  font-weight: 550;
+}
+
+.tb-legend.finished::before {
+  background: var(--success);
+}
+
+/* ------------------------------------------------------------- overall --- */
+
+.tb-overall {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-overall-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tb-overall-pct {
+  font-size: 22px;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.tb-overall-count {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tb-overall .tb-progress-label {
+  margin-left: auto;
+}
+
+/* ---------------------------------------------------------------- rail --- */
 
 .tb-layout {
   display: grid;
@@ -1934,28 +2064,49 @@ p {
   top: 20px;
   max-height: calc(100vh - 40px);
   overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 10px;
+  padding: 8px;
   box-shadow: var(--shadow-sm);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.tb-rail-wrap::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tb-rail-wrap::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--surface);
 }
 
 .tb-rail-stage + .tb-rail-stage {
-  margin-top: 14px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
 }
 
+/* Sticks while you scroll its phases, so you never lose which stage you're
+   looking at in a 39-item list. */
 .tb-rail-stage-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 6px 6px;
+  padding: 7px 8px 6px;
+  background: var(--surface);
 }
 
 .tb-rail-stage-label {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 650;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-subtle);
 }
@@ -1984,11 +2135,12 @@ p {
 }
 
 .tb-rail-item {
+  position: relative;
   width: 100%;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 7px;
+  gap: 9px;
+  padding: 7px 8px 7px 9px;
   min-height: 32px;
   border: none;
   background: transparent;
@@ -2001,36 +2153,56 @@ p {
 }
 
 .tb-rail-item:hover {
-  background: var(--surface-hover);
+  background: var(--surface-muted);
   color: var(--text);
 }
 
+/* A left bar rather than a filled block: one accent mark per view reads as
+   "you are here" without tinting a quarter of the rail. */
 .tb-rail-item.active {
-  background: var(--accent-soft);
+  background: var(--surface-hover);
   color: var(--text);
   font-weight: 550;
+}
+
+.tb-rail-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 2.5px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+
+.tb-rail-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 .tb-rail-num {
   flex: none;
   margin-top: 1px;
-  width: 20px;
-  height: 20px;
+  width: 21px;
+  height: 21px;
   display: grid;
   place-items: center;
   border-radius: var(--radius-pill);
-  background: var(--surface-muted);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: 1px solid var(--border-strong);
   font-size: 10.5px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--text-subtle);
+  transition: background var(--dur) ease, border-color var(--dur) ease,
+    color var(--dur) ease;
 }
 
 .tb-rail-item.complete .tb-rail-num {
-  background: var(--success-soft);
+  background: var(--success);
   border-color: var(--success);
-  color: var(--success);
+  color: #fff;
 }
 
 .tb-rail-item.started .tb-rail-num {
@@ -2038,11 +2210,11 @@ p {
   color: var(--accent);
 }
 
-/* Wraps rather than truncating. The longest phase title is 53 characters
-   ("Validate OEM Management Fees before Finalizing Batches"); fitting that on
-   one line would need a ~420px rail, so it wraps to two instead. Ellipsis
-   made the rail unreadable — half the phases ended in "..." at the point
-   where they stop being distinguishable from each other. */
+/* Finished phases recede — the eye should land on what's left to do. */
+.tb-rail-item.complete:not(.active) .tb-rail-title {
+  color: var(--text-subtle);
+}
+
 .tb-rail-title {
   flex: 1;
   min-width: 0;
@@ -2060,9 +2232,10 @@ p {
 
 .tb-rail-issue {
   flex: none;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
+  margin-top: 2px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 5px;
   border-radius: var(--radius-pill);
   background: var(--danger);
   color: #fff;
@@ -2072,44 +2245,46 @@ p {
   place-items: center;
 }
 
-/* ------------------------------------------------------------- phase --- */
+/* --------------------------------------------------------------- phase --- */
 
 .tb-phase {
-  padding: 18px 20px 14px;
+  padding: 20px 22px 16px;
 }
 
 .tb-phase-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  padding-bottom: 12px;
+  gap: 12px 14px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--border);
 }
 
 .tb-phase-heading {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: baseline;
+  gap: 11px;
   flex: 1 1 320px;
   min-width: 0;
 }
 
+/* Reads as a quiet accent label rather than the filled pill it was — the
+   phase title is the heading, this is just its address. */
 .tb-phase-badge {
   flex: none;
-  padding: 3px 9px;
-  border-radius: var(--radius-pill);
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 650;
-  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  text-transform: uppercase;
 }
 
 .tb-phase-title {
   margin: 0;
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 600;
+  letter-spacing: -0.011em;
   line-height: 1.3;
   display: flex;
   align-items: center;
@@ -2119,9 +2294,9 @@ p {
 .tb-phase-progress {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex: 1 1 220px;
-  min-width: 180px;
+  gap: 11px;
+  flex: 1 1 240px;
+  min-width: 190px;
 }
 
 .tb-phase-bulk {
@@ -2131,30 +2306,54 @@ p {
 }
 
 .tb-phase-intro {
-  margin: 14px 0 0;
-  padding: 9px 12px;
-  border-left: 2px solid var(--border-strong);
+  margin: 15px 0 0;
+  padding: 10px 13px;
+  border-left: 2px solid var(--accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--surface-muted);
   color: var(--text-muted);
   font-size: 13.5px;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
+/* ---------------------------------------------------------------- step --- */
+
 .tb-steps {
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .tb-step-group + .tb-step-group {
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .tb-step {
-  padding: 7px 9px;
+  position: relative;
+  padding: 8px 9px;
   border-radius: var(--radius-sm);
   transition: background var(--dur) ease;
 }
 
 .tb-step:hover {
   background: var(--surface-muted);
+}
+
+/* High-risk steps carry a quiet left rule instead of relying on the badge
+   alone — findable while scrolling, without shouting. */
+.tb-step:has(.badge.danger)::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--danger);
+  opacity: 0.55;
+}
+
+.tb-step.done::before,
+.tb-step.na::before {
+  opacity: 0.18;
 }
 
 .tb-step-main {
@@ -2164,32 +2363,30 @@ p {
   flex-wrap: wrap;
 }
 
-/* min-width, not 0: on touch the action row is permanently visible and ~166px
-   wide, which was squeezing the step text down to a 17px-wide column of single
-   characters. A floor on the text means the actions wrap to their own line
-   instead of winning the fight for space. */
 .tb-step-text {
   flex: 1;
   min-width: 140px;
   font-size: 13.5px;
-  line-height: 1.5;
+  line-height: 1.55;
   cursor: pointer;
   padding-top: 1px;
+  transition: color var(--dur) ease;
 }
 
 .tb-step.done .tb-step-text {
   color: var(--text-subtle);
   text-decoration: line-through;
   text-decoration-color: var(--border-strong);
+  text-decoration-thickness: 1px;
 }
 
 .tb-step.na .tb-step-text {
   color: var(--text-subtle);
-  opacity: 0.75;
+  text-decoration: line-through;
+  text-decoration-color: var(--border);
+  text-decoration-thickness: 1px;
 }
 
-/* Hidden actions must also be unclickable, or an invisible Delete sits next
-   to every step waiting to be hit. Same contract as .check-actions above. */
 .tb-step-actions {
   display: flex;
   gap: 2px;
@@ -2206,7 +2403,6 @@ p {
   pointer-events: auto;
 }
 
-/* No hover to reveal them with — show them permanently instead. */
 @media (hover: none), (pointer: coarse) {
   .tb-step-actions {
     opacity: 1;
@@ -2224,6 +2420,8 @@ p {
   background: transparent;
   color: var(--text-subtle);
   cursor: pointer;
+  transition: background var(--dur) ease, color var(--dur) ease,
+    border-color var(--dur) ease;
 }
 
 .tb-na-btn:hover {
@@ -2238,11 +2436,15 @@ p {
   opacity: 1;
 }
 
-/* An N/A step keeps its toggle visible — the state is only discoverable
-   from that button, so hiding it would hide why the step is struck out. */
 .tb-step-actions:has(.tb-na-btn.on) {
   opacity: 1;
   pointer-events: auto;
+}
+
+.tb-na-btn:focus-visible,
+.tb-step-actions .btn-icon:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .tb-note-glyph {
@@ -2254,62 +2456,69 @@ p {
   color: var(--accent);
 }
 
-/* Reference bullets carried over from the SOP — context, not work. */
 .tb-step-notes {
-  margin: 4px 0 2px;
+  margin: 5px 0 2px;
   padding-left: 44px;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .tb-step-notes li {
   position: relative;
-  padding-left: 12px;
+  padding-left: 13px;
   font-size: 12.5px;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--text-muted);
 }
 
 .tb-step-notes li::before {
-  content: "\00b7";
+  content: "";
   position: absolute;
   left: 2px;
-  color: var(--text-subtle);
+  top: 8px;
+  width: 4px;
+  height: 1px;
+  background: var(--border-strong);
 }
 
 .tb-step-note-saved {
-  margin: 4px 0 0 44px;
-  padding: 6px 9px;
+  position: relative;
+  margin: 6px 0 0 44px;
+  padding: 7px 11px;
   border-radius: var(--radius-sm);
-  background: var(--accent-soft);
+  border-left: 2px solid var(--accent);
+  background: var(--surface-muted);
   color: var(--text-muted);
   font-size: 12.5px;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .tb-note-form {
-  margin: 6px 0 2px 44px;
+  margin: 7px 0 2px 44px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
 
 .tb-add-step {
-  margin-top: 10px;
-  padding-top: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px dashed var(--border);
 }
 
-/* ---------------------------------------------------------- mistakes --- */
+/* ------------------------------------------------------------ mistakes --- */
 
+/* Was a fully bordered warning-tinted panel on every one of 39 phases, which
+   made the warning meaningless through sheer repetition. Now a left rule and
+   a faint wash: still unmistakably a caution, no longer shouting. */
 .tb-mistakes {
-  margin-top: 18px;
-  padding: 12px 14px;
-  border-radius: var(--radius);
+  margin-top: 20px;
+  padding: 13px 15px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  border-left: 3px solid var(--warning);
   background: var(--warning-soft);
-  border: 1px solid var(--warning);
 }
 
 .tb-mistakes-head {
@@ -2321,34 +2530,35 @@ p {
 
 .tb-mistakes-head h3 {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 650;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .tb-mistakes-empty {
-  margin: 8px 0 0;
+  margin: 9px 0 0;
   font-size: 12.5px;
   color: var(--text-muted);
 }
 
 .tb-mistakes-list {
-  margin: 8px 0 0;
+  margin: 9px 0 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 
 .tb-mistakes-list li {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 9px;
   padding: 5px 7px;
   border-radius: var(--radius-sm);
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--text);
 }
 
@@ -2362,7 +2572,7 @@ p {
 }
 
 .tb-global-toggle {
-  margin-top: 8px;
+  margin-top: 9px;
   padding: 0;
   border: none;
   background: none;
@@ -2370,14 +2580,19 @@ p {
   font-size: 12.5px;
   font-weight: 550;
   text-decoration: underline;
+  text-underline-offset: 2px;
   cursor: pointer;
 }
 
-/* ------------------------------------------------------------ issues --- */
+.tb-mistakes .inline-form {
+  margin-top: 10px;
+}
+
+/* -------------------------------------------------------------- issues --- */
 
 .tb-issues {
-  margin-top: 16px;
-  padding-top: 14px;
+  margin-top: 18px;
+  padding-top: 15px;
   border-top: 1px solid var(--border);
 }
 
@@ -2389,13 +2604,15 @@ p {
 
 .tb-issues-head h3 {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 650;
-  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
 }
 
 .tb-issues-list {
-  margin: 8px 0;
+  margin: 9px 0;
   padding: 0;
   list-style: none;
   display: flex;
@@ -2410,7 +2627,7 @@ p {
   padding: 6px 8px;
   border-radius: var(--radius-sm);
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .tb-issues-list li:hover {
@@ -2424,13 +2641,14 @@ p {
 .tb-issues-list li.resolved > span {
   color: var(--text-subtle);
   text-decoration: line-through;
+  text-decoration-color: var(--border-strong);
 }
 
-/* -------------------------------------------------------- navigation --- */
+/* ---------------------------------------------------------- navigation --- */
 
 .tb-phase-nav {
-  margin-top: 16px;
-  padding-top: 14px;
+  margin-top: 18px;
+  padding-top: 15px;
   border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -2440,9 +2658,10 @@ p {
 
 .tb-phase-position {
   margin: 0 auto;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--text-subtle);
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
 
 .tb-confirm-next {
@@ -2450,16 +2669,14 @@ p {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--warning-soft);
   font-size: 12.5px;
   color: var(--warning);
 }
 
-/* ------------------------------------------------------------ responsive --
-
-   Below 900px the rail moves *below* the phase card rather than above it.
-   A 37-entry navigator stacked on top would put ~320px of index between the
-   top of the screen and the first actual step; since prev/next drives the
-   normal sequential flow, the list belongs underneath as a jump-to index.  */
+/* ---------------------------------------------------------- responsive --- */
 
 @media (max-width: 900px) {
   .tb-layout {
@@ -2477,8 +2694,6 @@ p {
   }
 }
 
-/* The sidebar collapses to icons at 760px, so the month/percent caption has
-   nowhere to go — it overflowed the 62px rail. Progress is on the page. */
 @media (max-width: 760px) {
   .nav-sub {
     display: none;
@@ -2493,15 +2708,27 @@ p {
     padding-left: 30px;
   }
 
+  .tb-step-note-saved {
+    padding: 7px 11px;
+  }
+
   .tb-phase-head {
     gap: 10px;
   }
 
   .tb-phase-title {
-    font-size: 16px;
+    font-size: 16.5px;
   }
 
-  /* Keep the month selector and actions full-width instead of squeezing. */
+  .tb-overall-pct {
+    font-size: 19px;
+  }
+
+  .tb-overall .tb-progress-label {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+
   .tb-page .page-actions {
     width: 100%;
   }
@@ -2522,8 +2749,6 @@ p {
   }
 }
 
-/* Touch: 26-30px icon buttons are fine for a mouse, not for a thumb. Scoped
-   to .tb-* so the rest of the app keeps the sizing it was audited with. */
 @media (hover: none), (pointer: coarse) {
   .tb-na-btn,
   .tb-step-actions .btn-icon {

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { PhaseCard } from "@/components/traffic-billing/PhaseCard";
 import { PhaseRail } from "@/components/traffic-billing/PhaseRail";
+import { TbProgressBar, TbProgressLabel } from "@/components/traffic-billing/ProgressBar";
 import { Card, Empty, ErrorState, SkeletonList } from "@/components/ui";
 import { api } from "@/lib/client";
 import type { TbStepState } from "@/lib/constants";
@@ -351,23 +352,18 @@ export default function TrafficBillingPage() {
 
       {run && (
         <div className="tb-overall">
-          <div
-            className="progress-track"
-            role="progressbar"
-            aria-valuenow={progress.settled}
-            aria-valuemin={0}
-            aria-valuemax={progress.total}
-            aria-label={`${progress.settled} of ${progress.total} steps settled this month`}
-          >
-            <div
-              className={`progress-fill${progress.complete ? " complete" : ""}`}
-              style={{ width: `${progress.percent}%` }}
-            />
+          <div className="tb-overall-head">
+            <span className="tb-overall-pct">{progress.percent}%</span>
+            <span className="tb-overall-count">
+              {progress.settled} of {progress.total} steps
+            </span>
+            <TbProgressLabel progress={progress} />
           </div>
-          <span className="progress-label">
-            {progress.settled}/{progress.total} steps · {progress.done} done
-            {progress.na > 0 && ` · ${progress.na} N/A`} · {progress.percent}%
-          </span>
+          <TbProgressBar
+            progress={progress}
+            size="md"
+            label={`${progress.settled} of ${progress.total} steps settled this month`}
+          />
         </div>
       )}
 

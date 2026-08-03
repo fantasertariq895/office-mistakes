@@ -13,6 +13,7 @@ import {
   IconTrash,
 } from "../icons";
 import { InlineAdd, InlineEdit } from "../ui";
+import { TbProgressBar, TbProgressLabel } from "./ProgressBar";
 import { StepRow } from "./StepRow";
 
 type Handlers = {
@@ -124,24 +125,11 @@ export function PhaseCard({
         </div>
 
         <div className="tb-phase-progress">
-          <div
-            className="progress-track"
-            role="progressbar"
-            aria-valuenow={progress.settled}
-            aria-valuemin={0}
-            aria-valuemax={progress.total}
-            aria-label={`${progress.settled} of ${progress.total} steps settled in this phase`}
-          >
-            <div
-              className={`progress-fill${progress.complete ? " complete" : ""}`}
-              style={{ width: `${progress.percent}%` }}
-            />
-          </div>
-          <span className="progress-label">
-            {progress.done} done
-            {progress.na > 0 && ` · ${progress.na} N/A`}
-            {progress.open > 0 && ` · ${progress.open} left`}
-          </span>
+          <TbProgressBar
+            progress={progress}
+            label={`${progress.settled} of ${progress.total} steps settled in this phase`}
+          />
+          <TbProgressLabel progress={progress} />
         </div>
 
         {!readOnly && (
