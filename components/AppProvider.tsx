@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { api } from "@/lib/client";
-import { toDateInputValue } from "@/lib/date";
+import { localTodayInputValue } from "@/lib/date";
 import type { AppSettings, Commission, NotificationPoll } from "@/lib/types";
 
 export type CommissionSummary = Commission & {
@@ -81,7 +81,7 @@ function loadNotifiedToday(): Set<string> {
     const raw = window.localStorage.getItem(NOTIFIED_KEY);
     if (!raw) return new Set();
     const parsed = JSON.parse(raw) as { day: string; ids: string[] };
-    if (parsed.day !== toDateInputValue(new Date())) return new Set();
+    if (parsed.day !== localTodayInputValue()) return new Set();
     return new Set(parsed.ids);
   } catch {
     return new Set();
@@ -92,7 +92,7 @@ function saveNotifiedToday(ids: Set<string>) {
   try {
     window.localStorage.setItem(
       NOTIFIED_KEY,
-      JSON.stringify({ day: toDateInputValue(new Date()), ids: [...ids] })
+      JSON.stringify({ day: localTodayInputValue(), ids: [...ids] })
     );
   } catch {
     /* storage may be unavailable */

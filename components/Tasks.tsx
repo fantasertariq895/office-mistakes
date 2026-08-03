@@ -10,7 +10,7 @@ import {
   type TaskPriority,
   type TaskStatus,
 } from "@/lib/constants";
-import { relativeDayLabel, toDateInputValue } from "@/lib/date";
+import { localTodayInputValue, relativeDayLabel, toDateInputValue } from "@/lib/date";
 import { isDueTodayTask, isOverdueTask } from "@/lib/task-utils";
 import type { Task } from "@/lib/types";
 import { useApp } from "./AppProvider";
@@ -307,7 +307,7 @@ export function emptyDraft(commissionId: number | null = null): TaskDraft {
     notes: "",
     priority: "medium",
     status: "not_started",
-    dueDate: toDateInputValue(new Date()),
+    dueDate: localTodayInputValue(),
     commissionId,
   };
 }

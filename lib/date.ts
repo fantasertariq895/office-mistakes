@@ -14,6 +14,14 @@
  * relativeDayLabel/formatCalendarDay) is UTC-anchored on purpose, so the
  * calendar day round-trips identically everywhere.
  *
+ * "Today" needs the same care: it's a calendar day too, and it means the
+ * viewer's local calendar day, not the server's or UTC's. Reading `new
+ * Date()` (the real current instant) with the same UTC getters used to
+ * decode a due date would silently ask "is this due today in UTC" instead of
+ * "is this due today for the person looking at the screen" — todayAsCalendarDay()
+ * exists specifically so every comparison (isToday/isPast/isFuture/
+ * relativeDayLabel/daysBetween call sites) anchors to the right one.
+ *
  * Real timestamps — when a task was completed, when a mistake was logged —
  * are a different thing: a genuine instant, correctly shown in the viewer's
  * own local time. formatDay/formatFullDate/formatDateTime are for those and
@@ -40,13 +48,34 @@ export function addDays(d: Date, days: number): Date {
   return date;
 }
 
-/** "YYYY-MM-DD" for the calendar day this (UTC-anchored) date represents. */
+/**
+ * "YYYY-MM-DD" for the calendar day this (UTC-anchored) date represents.
+ * Use this to read back a due date that came from the server — one that was
+ * itself built with fromDateInputValue. Do NOT use this for "what's today's
+ * date" on the client (e.g. defaulting a new task's due date): `new Date()`
+ * is the real current instant, and reading it with UTC getters can name the
+ * wrong day for anyone not near the Greenwich meridian — use
+ * localTodayInputValue() for that instead.
+ */
 export function toDateInputValue(d: Date | string | null | undefined): string {
   if (!d) return "";
   const date = typeof d === "string" ? new Date(d) : d;
   if (Number.isNaN(date.getTime())) return "";
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
+}
+
+/**
+ * "YYYY-MM-DD" for today, in whichever timezone this code is actually
+ * running — the browser's local zone for client calls (the sensible
+ * "today"), or the server's zone (UTC on Vercel) for the rare server call.
+ * This never touches a stored date, so there's no round trip to protect —
+ * unlike toDateInputValue, it deliberately uses local getters.
+ */
+export function localTodayInputValue(): string {
+  const date = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 /** Parse "YYYY-MM-DD" as UTC midnight — see the module doc for why UTC, not local. */
@@ -57,6 +86,19 @@ export function fromDateInputValue(value: string): Date | null {
   return new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
 }
 
+/**
+ * "Today" re-anchored the same way a due date is: UTC midnight of the
+ * viewer's *local* calendar day. Comparing a due date against raw `new
+ * Date()` through the UTC-anchored startOfDay above would silently compare
+ * against UTC's current day instead of the viewer's — same class of bug as
+ * the save/display one, just for "is this due today" instead of "what day
+ * did I pick". Every comparison below goes through this, not `new Date()`
+ * directly.
+ */
+export function todayAsCalendarDay(): Date {
+  return fromDateInputValue(localTodayInputValue())!;
+}
+
 export function daysBetween(a: Date | string, b: Date | string): number {
   const start = startOfDay(a).getTime();
   const end = startOfDay(b).getTime();
@@ -65,17 +107,17 @@ export function daysBetween(a: Date | string, b: Date | string): number {
 
 export function isToday(d: Date | string | null | undefined): boolean {
   if (!d) return false;
-  return daysBetween(new Date(), d) === 0;
+  return daysBetween(todayAsCalendarDay(), d) === 0;
 }
 
 export function isPast(d: Date | string | null | undefined): boolean {
   if (!d) return false;
-  return daysBetween(new Date(), d) < 0;
+  return daysBetween(todayAsCalendarDay(), d) < 0;
 }
 
 export function isFuture(d: Date | string | null | undefined): boolean {
   if (!d) return false;
-  return daysBetween(new Date(), d) > 0;
+  return daysBetween(todayAsCalendarDay(), d) > 0;
 }
 
 const DAY_FMT = new Intl.DateTimeFormat(undefined, {
@@ -133,7 +175,7 @@ export function formatDateTime(d: Date | string): string {
 /** "Today", "Tomorrow", "3 days overdue", "in 5 days", else a short date. */
 export function relativeDayLabel(d: Date | string | null | undefined): string {
   if (!d) return "No due date";
-  const diff = daysBetween(new Date(), d);
+  const diff = daysBetween(todayAsCalendarDay(), d);
   if (diff === 0) return "Today";
   if (diff === 1) return "Tomorrow";
   if (diff === -1) return "Yesterday";

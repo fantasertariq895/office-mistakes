@@ -8,7 +8,7 @@ import { MistakeLogSection } from "@/components/MistakeLogSection";
 import { TaskFormModal, TaskList } from "@/components/Tasks";
 import { Card, ErrorState, InlineAdd } from "@/components/ui";
 import { api } from "@/lib/client";
-import { formatFullDate, toDateInputValue } from "@/lib/date";
+import { formatFullDate, localTodayInputValue } from "@/lib/date";
 import { useFetch } from "@/lib/hooks";
 import { sortTasks } from "@/lib/task-utils";
 import type { BoardData, ChecklistItem, Task } from "@/lib/types";
@@ -143,7 +143,7 @@ export default function HomePage() {
     try {
       await api.post("/api/tasks", {
         title,
-        dueDate: toDateInputValue(new Date()),
+        dueDate: localTodayInputValue(),
         commissionId: currentCommissionId,
       });
       await tasks.reload();

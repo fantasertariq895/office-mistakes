@@ -1,4 +1,4 @@
-import { daysBetween } from "./date";
+import { daysBetween, todayAsCalendarDay } from "./date";
 
 type SortableTask = {
   dueDate: Date | string | null;
@@ -35,16 +35,16 @@ type DatedTask = { dueDate: Date | string | null; status: string };
 export const isOpen = (t: DatedTask) => t.status !== "completed";
 
 export function isOverdueTask(t: DatedTask): boolean {
-  return isOpen(t) && !!t.dueDate && daysBetween(new Date(), t.dueDate) < 0;
+  return isOpen(t) && !!t.dueDate && daysBetween(todayAsCalendarDay(), t.dueDate) < 0;
 }
 
 export function isDueTodayTask(t: DatedTask): boolean {
-  return isOpen(t) && !!t.dueDate && daysBetween(new Date(), t.dueDate) === 0;
+  return isOpen(t) && !!t.dueDate && daysBetween(todayAsCalendarDay(), t.dueDate) === 0;
 }
 
 export function isUpcomingTask(t: DatedTask, withinDays?: number): boolean {
   if (!isOpen(t) || !t.dueDate) return false;
-  const diff = daysBetween(new Date(), t.dueDate);
+  const diff = daysBetween(todayAsCalendarDay(), t.dueDate);
   if (diff <= 0) return false;
   return withinDays === undefined ? true : diff <= withinDays;
 }
