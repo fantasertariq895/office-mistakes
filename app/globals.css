@@ -1896,19 +1896,21 @@ p {
 }
 
 /* ==========================================================================
-   Traffic Billing — visual pass
+   Traffic Billing — visual pass (bold)
 
-   Same tokens as the rest of the app; no new colours, no new radii, no new
-   fonts. The brief was "more stylish and simpler", so this pass mostly
-   *removes* weight rather than adding it:
+   Same tokens, same restraint about *what* gets colour; louder about
+   hierarchy. The previous pass was too quiet to read as a change at all, so
+   this one commits:
 
-   - colour is reserved for meaning (done / N/A / risk / active), never for
-     decoration, matching the rule the base design system already follows
-   - one accent per view: the active phase. Everything else is neutral
-   - borders do the work that background fills were doing, so 39 phases and
-     331 steps don't read as a wall of tinted boxes
-   - progress is segmented (done vs N/A) because a flat 100% bar hides the
-     fact that a month skipped half its steps
+   - a real type scale, so the phase title is unmistakably the heading
+   - stage identity colour (one hue per stage, from COMMISSION_COLORS) on the
+     rail marker, the active bar and the phase eyebrow — it answers "where am
+     I in the month", which is meaning, not decoration
+   - a display numeral for the phase, so your position is readable at arm's
+     length
+   - real elevation on the working card, so it separates from the rail
+   - colour still never used decoratively: green = done, grey = N/A,
+     red = risk, stage hue = location. Nothing else is tinted.
    ========================================================================== */
 
 .nav-sub {
@@ -1921,23 +1923,21 @@ p {
 
 /* ------------------------------------------------------------ progress --- */
 
-/* flex:none matters. This bar sits in a row container inside the phase card
-   but in a *column* container in the page header, and `flex: 1` there sets
-   flex-basis on the block axis — collapsing the bar to 0px tall and making it
-   silently invisible. The row case opts back in below. */
 .tb-progress {
   display: flex;
   flex: none;
   width: 100%;
-  height: 6px;
+  height: 8px;
   border-radius: var(--radius-pill);
-  background: var(--border);
+  background: var(--surface-muted);
+  box-shadow: inset 0 0 0 1px var(--border);
   overflow: hidden;
 }
 
 .tb-phase-progress .tb-progress {
   flex: 1 1 auto;
   min-width: 90px;
+  height: 6px;
 }
 
 .tb-progress.sm {
@@ -1947,27 +1947,27 @@ p {
 .tb-progress-done,
 .tb-progress-na {
   height: 100%;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tb-progress-done {
   background: var(--success);
 }
 
-/* N/A is settled but it isn't work done — muted, so a mostly-skipped month
-   never looks like a mostly-completed one at a glance. */
+/* Settled, but not work done — hatched rather than solid so a mostly-skipped
+   month can never be mistaken for a mostly-finished one. */
 .tb-progress-na {
-  background: var(--border-strong);
-}
-
-.tb-progress.complete .tb-progress-done {
-  background: var(--success);
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--border-strong) 0 3px,
+    var(--surface-muted) 3px 6px
+  );
 }
 
 .tb-progress-label {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   font-size: 12px;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
@@ -1977,14 +1977,15 @@ p {
 .tb-legend {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+  font-weight: 500;
 }
 
 .tb-legend::before {
   content: "";
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
   flex: none;
 }
 
@@ -1993,57 +1994,63 @@ p {
 }
 
 .tb-legend.na::before {
-  background: var(--border-strong);
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--border-strong) 0 2px,
+    var(--surface) 2px 4px
+  );
+  box-shadow: inset 0 0 0 1px var(--border-strong);
 }
 
 .tb-legend.open::before {
-  background: var(--border-strong);
-  box-shadow: inset 0 0 0 1.5px var(--surface);
-  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1.5px var(--border-strong);
 }
 
 .tb-legend.finished {
   color: var(--success);
-  font-weight: 550;
+  font-weight: 600;
 }
 
 .tb-legend.finished::before {
   background: var(--success);
 }
 
-/* ------------------------------------------------------------- overall --- */
+/* -------------------------------------------------------- run summary --- */
 
 .tb-overall {
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  padding: 14px 16px;
-  margin-bottom: 20px;
+  gap: 13px;
+  padding: 20px 22px;
+  margin-bottom: 22px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
 }
 
 .tb-overall-head {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
 }
 
 .tb-overall-pct {
-  font-size: 22px;
-  font-weight: 620;
-  letter-spacing: -0.02em;
+  font-size: 40px;
+  font-weight: 680;
+  letter-spacing: -0.035em;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
+  line-height: 0.95;
+  color: var(--text);
 }
 
 .tb-overall-count {
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+  font-weight: 500;
 }
 
 .tb-overall .tb-progress-label {
@@ -2055,7 +2062,7 @@ p {
 .tb-layout {
   display: grid;
   grid-template-columns: 310px minmax(0, 1fr);
-  gap: 20px;
+  gap: 22px;
   align-items: start;
 }
 
@@ -2065,33 +2072,28 @@ p {
   max-height: calc(100vh - 40px);
   overflow-y: auto;
   overscroll-behavior: contain;
-  background: var(--surface);
+  background: var(--surface-muted);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 8px;
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-lg);
+  padding: 10px;
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
 }
 
 .tb-rail-wrap::-webkit-scrollbar {
-  width: 8px;
+  width: 9px;
 }
 
 .tb-rail-wrap::-webkit-scrollbar-thumb {
   background: var(--border-strong);
   border-radius: var(--radius-pill);
-  border: 2px solid var(--surface);
+  border: 2.5px solid var(--surface-muted);
 }
 
 .tb-rail-stage + .tb-rail-stage {
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px solid var(--border);
+  margin-top: 10px;
 }
 
-/* Sticks while you scroll its phases, so you never lose which stage you're
-   looking at in a 39-item list. */
 .tb-rail-stage-head {
   position: sticky;
   top: 0;
@@ -2099,21 +2101,30 @@ p {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 8px 6px;
-  background: var(--surface);
+  padding: 9px 8px 7px;
+  background: var(--surface-muted);
+}
+
+.tb-rail-stage-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex: none;
+  background: var(--stage, var(--accent));
 }
 
 .tb-rail-stage-label {
   font-size: 10.5px;
-  font-weight: 650;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--text-subtle);
+  color: var(--text-muted);
 }
 
 .tb-rail-stage-count {
   margin-left: auto;
   font-size: 11px;
+  font-weight: 600;
   color: var(--text-subtle);
   font-variant-numeric: tabular-nums;
 }
@@ -2131,7 +2142,7 @@ p {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
 }
 
 .tb-rail-item {
@@ -2139,9 +2150,9 @@ p {
   width: 100%;
   display: flex;
   align-items: flex-start;
-  gap: 9px;
-  padding: 7px 8px 7px 9px;
-  min-height: 32px;
+  gap: 10px;
+  padding: 8px 9px 8px 11px;
+  min-height: 34px;
   border: none;
   background: transparent;
   border-radius: var(--radius-sm);
@@ -2153,27 +2164,27 @@ p {
 }
 
 .tb-rail-item:hover {
-  background: var(--surface-muted);
+  background: var(--surface);
   color: var(--text);
 }
 
-/* A left bar rather than a filled block: one accent mark per view reads as
-   "you are here" without tinting a quarter of the rail. */
 .tb-rail-item.active {
-  background: var(--surface-hover);
+  background: var(--surface);
   color: var(--text);
-  font-weight: 550;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
 }
 
+/* Stage-coloured bar: tells you which phase AND which stage at once. */
 .tb-rail-item.active::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 6px;
-  bottom: 6px;
-  width: 2.5px;
+  top: 5px;
+  bottom: 5px;
+  width: 3px;
   border-radius: var(--radius-pill);
-  background: var(--accent);
+  background: var(--stage, var(--accent));
 }
 
 .tb-rail-item:focus-visible {
@@ -2184,15 +2195,15 @@ p {
 .tb-rail-num {
   flex: none;
   margin-top: 1px;
-  width: 21px;
-  height: 21px;
+  width: 22px;
+  height: 22px;
   display: grid;
   place-items: center;
-  border-radius: var(--radius-pill);
-  background: transparent;
+  border-radius: 6px;
+  background: var(--surface);
   border: 1px solid var(--border-strong);
   font-size: 10.5px;
-  font-weight: 600;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--text-subtle);
   transition: background var(--dur) ease, border-color var(--dur) ease,
@@ -2205,12 +2216,15 @@ p {
   color: #fff;
 }
 
+/* Border carries the stage hue; the numeral itself stays on audited text
+   colour so a 10.5px digit is never the low-contrast element. */
 .tb-rail-item.started .tb-rail-num {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--stage, var(--accent));
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--stage, var(--accent));
 }
 
-/* Finished phases recede — the eye should land on what's left to do. */
 .tb-rail-item.complete:not(.active) .tb-rail-title {
   color: var(--text-subtle);
 }
@@ -2218,7 +2232,7 @@ p {
 .tb-rail-title {
   flex: 1;
   min-width: 0;
-  line-height: 1.35;
+  line-height: 1.4;
   overflow-wrap: anywhere;
 }
 
@@ -2226,6 +2240,7 @@ p {
   flex: none;
   margin-top: 3px;
   font-size: 10.5px;
+  font-weight: 600;
   color: var(--text-subtle);
   font-variant-numeric: tabular-nums;
 }
@@ -2233,8 +2248,8 @@ p {
 .tb-rail-issue {
   flex: none;
   margin-top: 2px;
-  min-width: 17px;
-  height: 17px;
+  min-width: 18px;
+  height: 18px;
   padding: 0 5px;
   border-radius: var(--radius-pill);
   background: var(--danger);
@@ -2248,55 +2263,109 @@ p {
 /* --------------------------------------------------------------- phase --- */
 
 .tb-phase {
-  padding: 20px 22px 16px;
+  padding: 0 0 18px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
+/* Stage colour as a top rule — the card announces which part of the month
+   you're in before you read a word of it. */
 .tb-phase-head {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px 14px;
-  padding-bottom: 14px;
+  gap: 14px 18px;
+  padding: 22px 24px 18px;
   border-bottom: 1px solid var(--border);
+  background: var(--surface-muted);
+}
+
+.tb-phase-head::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--stage, var(--accent));
+}
+
+.tb-phase-numeral {
+  flex: none;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--stage, var(--accent));
+  opacity: 0.28;
 }
 
 .tb-phase-heading {
   display: flex;
-  align-items: baseline;
-  gap: 11px;
+  flex-direction: column;
+  gap: 5px;
   flex: 1 1 320px;
   min-width: 0;
 }
 
-/* Reads as a quiet accent label rather than the filled pill it was — the
-   phase title is the heading, this is just its address. */
 .tb-phase-badge {
-  flex: none;
-  font-size: 12px;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
-  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+/* The stage hue is carried by the marker, not the letters. Measured against
+   both themes, all nine stage colours land between 2.6:1 and 5.3:1 — fine for
+   a solid marker, under the 4.5:1 small-text floor this app was audited to.
+   The dot is redundant with the label beside it, so no information is
+   colour-only. */
+.tb-phase-stage {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.tb-phase-stage::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex: none;
+  background: var(--stage, var(--accent));
+}
+
+.tb-phase-of {
+  font-size: 11.5px;
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
 }
 
 .tb-phase-title {
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: -0.011em;
-  line-height: 1.3;
+  font-size: 22px;
+  font-weight: 640;
+  letter-spacing: -0.021em;
+  line-height: 1.22;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
 }
 
 .tb-phase-progress {
   display: flex;
   align-items: center;
-  gap: 11px;
-  flex: 1 1 240px;
-  min-width: 190px;
+  gap: 12px;
+  flex: 1 1 250px;
+  min-width: 200px;
 }
 
 .tb-phase-bulk {
@@ -2306,29 +2375,44 @@ p {
 }
 
 .tb-phase-intro {
-  margin: 15px 0 0;
-  padding: 10px 13px;
-  border-left: 2px solid var(--accent);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  background: var(--surface-muted);
+  margin: 0;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
   color: var(--text-muted);
-  font-size: 13.5px;
-  line-height: 1.55;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 /* ---------------------------------------------------------------- step --- */
 
 .tb-steps {
-  margin-top: 10px;
+  padding: 12px 16px 0;
 }
 
 .tb-step-group + .tb-step-group {
-  margin-top: 6px;
+  margin-top: 10px;
+}
+
+.tb-steps .checklist-group-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 8px 6px;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: var(--text-subtle);
+}
+
+.tb-steps .checklist-group-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
 }
 
 .tb-step {
   position: relative;
-  padding: 8px 9px;
+  padding: 9px 10px;
   border-radius: var(--radius-sm);
   transition: background var(--dur) ease;
 }
@@ -2337,39 +2421,37 @@ p {
   background: var(--surface-muted);
 }
 
-/* High-risk steps carry a quiet left rule instead of relying on the badge
-   alone — findable while scrolling, without shouting. */
 .tb-step:has(.badge.danger)::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 7px;
-  bottom: 7px;
-  width: 2px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
   border-radius: var(--radius-pill);
   background: var(--danger);
-  opacity: 0.55;
+  opacity: 0.6;
 }
 
 .tb-step.done::before,
 .tb-step.na::before {
-  opacity: 0.18;
+  opacity: 0.16;
 }
 
 .tb-step-main {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 11px;
   flex-wrap: wrap;
 }
 
 .tb-step-text {
   flex: 1;
   min-width: 140px;
-  font-size: 13.5px;
-  line-height: 1.55;
+  font-size: 14px;
+  line-height: 1.6;
   cursor: pointer;
-  padding-top: 1px;
+  padding-top: 0;
   transition: color var(--dur) ease;
 }
 
@@ -2411,8 +2493,8 @@ p {
 }
 
 .tb-na-btn {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
   border-radius: var(--radius-sm);
@@ -2457,19 +2539,19 @@ p {
 }
 
 .tb-step-notes {
-  margin: 5px 0 2px;
-  padding-left: 44px;
+  margin: 6px 0 2px;
+  padding-left: 46px;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .tb-step-notes li {
   position: relative;
-  padding-left: 13px;
-  font-size: 12.5px;
-  line-height: 1.55;
+  padding-left: 14px;
+  font-size: 13px;
+  line-height: 1.6;
   color: var(--text-muted);
 }
 
@@ -2477,88 +2559,85 @@ p {
   content: "";
   position: absolute;
   left: 2px;
-  top: 8px;
-  width: 4px;
-  height: 1px;
+  top: 9px;
+  width: 5px;
+  height: 1.5px;
+  border-radius: 1px;
   background: var(--border-strong);
 }
 
 .tb-step-note-saved {
-  position: relative;
-  margin: 6px 0 0 44px;
-  padding: 7px 11px;
+  margin: 7px 0 0 46px;
+  padding: 9px 13px;
   border-radius: var(--radius-sm);
-  border-left: 2px solid var(--accent);
-  background: var(--surface-muted);
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
   color: var(--text-muted);
-  font-size: 12.5px;
-  line-height: 1.55;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .tb-note-form {
-  margin: 7px 0 2px 44px;
+  margin: 8px 0 2px 46px;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
 }
 
 .tb-add-step {
-  margin-top: 12px;
-  padding-top: 12px;
+  margin: 14px 16px 0;
+  padding-top: 14px;
   border-top: 1px dashed var(--border);
 }
 
 /* ------------------------------------------------------------ mistakes --- */
 
-/* Was a fully bordered warning-tinted panel on every one of 39 phases, which
-   made the warning meaningless through sheer repetition. Now a left rule and
-   a faint wash: still unmistakably a caution, no longer shouting. */
 .tb-mistakes {
-  margin-top: 20px;
-  padding: 13px 15px;
-  border-radius: 0 var(--radius) var(--radius) 0;
-  border-left: 3px solid var(--warning);
+  margin: 22px 16px 0;
+  padding: 15px 17px;
+  border-radius: var(--radius);
+  border-left: 4px solid var(--warning);
   background: var(--warning-soft);
 }
 
 .tb-mistakes-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   color: var(--warning);
 }
 
 .tb-mistakes-head h3 {
   margin: 0;
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.05em;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .tb-mistakes-empty {
-  margin: 9px 0 0;
-  font-size: 12.5px;
+  margin: 10px 0 0;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
 .tb-mistakes-list {
-  margin: 9px 0 0;
+  margin: 11px 0 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .tb-mistakes-list li {
   display: flex;
   align-items: flex-start;
-  gap: 9px;
-  padding: 5px 7px;
+  gap: 10px;
+  padding: 6px 8px;
   border-radius: var(--radius-sm);
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 13.5px;
+  line-height: 1.6;
   color: var(--text);
 }
 
@@ -2568,51 +2647,51 @@ p {
 
 .tb-mistakes-list.global li {
   color: var(--text-muted);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .tb-global-toggle {
-  margin-top: 9px;
+  margin-top: 10px;
   padding: 0;
   border: none;
   background: none;
   color: var(--warning);
   font-size: 12.5px;
-  font-weight: 550;
+  font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
   cursor: pointer;
 }
 
 .tb-mistakes .inline-form {
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 /* -------------------------------------------------------------- issues --- */
 
 .tb-issues {
-  margin-top: 18px;
-  padding-top: 15px;
+  margin: 20px 16px 0;
+  padding-top: 17px;
   border-top: 1px solid var(--border);
 }
 
 .tb-issues-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 }
 
 .tb-issues-head h3 {
   margin: 0;
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.05em;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-subtle);
 }
 
 .tb-issues-list {
-  margin: 9px 0;
+  margin: 11px 0;
   padding: 0;
   list-style: none;
   display: flex;
@@ -2623,11 +2702,11 @@ p {
 .tb-issues-list li {
   display: flex;
   align-items: flex-start;
-  gap: 9px;
-  padding: 6px 8px;
+  gap: 10px;
+  padding: 7px 9px;
   border-radius: var(--radius-sm);
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 13.5px;
+  line-height: 1.6;
 }
 
 .tb-issues-list li:hover {
@@ -2647,8 +2726,8 @@ p {
 /* ---------------------------------------------------------- navigation --- */
 
 .tb-phase-nav {
-  margin-top: 18px;
-  padding-top: 15px;
+  margin: 20px 16px 0;
+  padding-top: 17px;
   border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -2659,6 +2738,7 @@ p {
 .tb-phase-position {
   margin: 0 auto;
   font-size: 12px;
+  font-weight: 500;
   color: var(--text-subtle);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
@@ -2667,12 +2747,14 @@ p {
 .tb-confirm-next {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   flex-wrap: wrap;
-  padding: 6px 10px;
+  padding: 7px 12px;
   border-radius: var(--radius-sm);
   background: var(--warning-soft);
+  border: 1px solid var(--warning);
   font-size: 12.5px;
+  font-weight: 500;
   color: var(--warning);
 }
 
@@ -2689,8 +2771,25 @@ p {
     max-height: 340px;
   }
 
-  .tb-phase {
-    padding: 16px 14px 12px;
+  .tb-phase-head {
+    padding: 18px 16px 15px;
+    gap: 12px;
+  }
+
+  .tb-phase-intro {
+    padding: 13px 16px;
+  }
+
+  .tb-steps {
+    padding: 10px 8px 0;
+  }
+
+  .tb-add-step,
+  .tb-mistakes,
+  .tb-issues,
+  .tb-phase-nav {
+    margin-left: 10px;
+    margin-right: 10px;
   }
 }
 
@@ -2709,19 +2808,23 @@ p {
   }
 
   .tb-step-note-saved {
-    padding: 7px 11px;
+    padding: 9px 13px;
   }
 
-  .tb-phase-head {
-    gap: 10px;
+  .tb-phase-numeral {
+    font-size: 26px;
   }
 
   .tb-phase-title {
-    font-size: 16.5px;
+    font-size: 19px;
+  }
+
+  .tb-overall {
+    padding: 16px 16px;
   }
 
   .tb-overall-pct {
-    font-size: 19px;
+    font-size: 32px;
   }
 
   .tb-overall .tb-progress-label {

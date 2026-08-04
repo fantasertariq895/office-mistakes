@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { TbStepState } from "@/lib/constants";
 import { progressFor, stateOf, type StateMap } from "@/lib/traffic-billing/progress";
+import { stageColor, stageLabel } from "@/lib/traffic-billing/stages";
 import type { TbIssue, TbMistake, TbPhase } from "@/lib/types";
 import {
   IconAlert,
@@ -93,9 +94,20 @@ export function PhaseCard({
 
   return (
     <article className="tb-phase card">
-      <header className="tb-phase-head">
+      <header
+        className="tb-phase-head"
+        style={{ "--stage": stageColor(phase.stageKey) } as React.CSSProperties}
+      >
+        <span className="tb-phase-numeral" aria-hidden="true">
+          {String(phase.number).padStart(2, "0")}
+        </span>
         <div className="tb-phase-heading">
-          <span className="tb-phase-badge">Phase {phase.number}</span>
+          <span className="tb-phase-badge">
+            <span className="tb-phase-stage">{stageLabel(phase.stageKey)}</span>
+            <span className="tb-phase-of">
+              Phase {phase.number} of {position.total}
+            </span>
+          </span>
           {editingTitle ? (
             <InlineEdit
               value={phase.title}

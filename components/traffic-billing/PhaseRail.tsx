@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { stageLabel, stageOrder } from "@/lib/traffic-billing/stages";
+import { stageColor, stageLabel, stageOrder } from "@/lib/traffic-billing/stages";
 import { progressFor, type StateMap } from "@/lib/traffic-billing/progress";
 import type { TbPhase } from "@/lib/types";
 import { IconCheckCircle } from "../icons";
@@ -37,7 +37,12 @@ export function PhaseRail({
     }
     return [...map.entries()]
       .sort((a, b) => stageOrder(a[0]) - stageOrder(b[0]))
-      .map(([key, items]) => ({ key, label: stageLabel(key), phases: items }));
+      .map(([key, items]) => ({
+        key,
+        label: stageLabel(key),
+        color: stageColor(key),
+        phases: items,
+      }));
   }, [phases]);
 
   return (
@@ -48,8 +53,15 @@ export function PhaseRail({
           stateMap
         );
         return (
-          <section className="tb-rail-stage" key={stage.key}>
+          <section
+            className="tb-rail-stage"
+            key={stage.key}
+            // Stage colour rides down as a custom property so the marker, the
+            // active bar and the progress dot all read from one source.
+            style={{ "--stage": stage.color } as React.CSSProperties}
+          >
             <header className="tb-rail-stage-head">
+              <span className="tb-rail-stage-dot" aria-hidden="true" />
               <span className="tb-rail-stage-label">{stage.label}</span>
               {stageProgress.complete ? (
                 <span className="tb-rail-stage-done" title="Stage complete">
