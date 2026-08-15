@@ -7,6 +7,7 @@ import { IconPlus } from "@/components/icons";
 import { MistakeLogSection } from "@/components/MistakeLogSection";
 import { TaskFormModal, TaskList } from "@/components/Tasks";
 import { Card, ErrorState, InlineAdd } from "@/components/ui";
+import { VoiceCapture } from "@/components/VoiceCapture";
 import { api } from "@/lib/client";
 import { formatFullDate, localTodayInputValue } from "@/lib/date";
 import { useFetch } from "@/lib/hooks";
@@ -165,6 +166,7 @@ export default function HomePage() {
           <p className="page-subtitle">{formatFullDate()}</p>
         </div>
         <div className="page-actions">
+          <VoiceCapture onCreated={() => tasks.reload()} />
           <button className="btn btn-primary" onClick={() => setCreating(true)}>
             <IconPlus size={15} />
             New task

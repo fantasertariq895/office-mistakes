@@ -2879,3 +2879,173 @@ p {
     height: 38px;
   }
 }
+
+/* ==========================================================================
+   Voice capture — dictate tasks, review, confirm
+
+   Own namespace (.voice-*), reusing every existing token and the same
+   .badge / .modal / .input primitives everything else already uses.
+   ========================================================================== */
+
+/**
+ * Sizing this correctly took three tries, worth recording so the next edit
+ * here doesn't repeat them:
+ *
+ * 1. .voice-heard has white-space:nowrap, so its min-content width equals the
+ *    full unbroken transcript line. Every ancestor (.voice-live, .page-actions)
+ *    is a flex item too, each with the browser default min-width:auto, so
+ *    that min-content size propagates straight up the chain — a long
+ *    dictated sentence made .page-actions itself balloon to 666px in a
+ *    375px viewport. Fixed with min-width:0 on .voice-heard.
+ * 2. A plain `max-width: 420px` (or even `100%`) still isn't enough: it
+ *    resolves against .page-actions, which — before fix 3 — was an
+ *    unconstrained flex item sized to its own content, so the percentage
+ *    was circular.
+ * 3. `calc(100vw - Npx)` looked like the fix but requires hand-tracking the
+ *    collapsed sidebar's width (62px below 760px) plus .page's own padding
+ *    — two numbers that live in unrelated rules and will silently drift out
+ *    of sync here. Real fix: give .page-actions a claimed width once
+ *    .voice-live forces it onto its own wrapped row, so percentage sizing
+ *    resolves against .page-header, which genuinely is 100% of .page's
+ *    (viewport-constrained) content box. No viewport arithmetic needed.
+ */
+.voice-live {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px 0 12px;
+  height: 34px;
+  border-radius: var(--radius-pill);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  width: 100%;
+  max-width: 420px;
+}
+
+/* Scoped with :has so the ordinary two-button case is never affected — this
+   only changes .page-actions' sizing while a live recording is showing. */
+.page-actions:has(.voice-live) {
+  width: 100%;
+}
+
+.voice-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  flex: none;
+  animation: voice-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes voice-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.8); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-pulse {
+    animation: none;
+  }
+}
+
+.voice-time {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--danger);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+.voice-heard {
+  /* min-width: 0 is load-bearing: a flex item's default min-width is `auto`,
+     which means it refuses to shrink below its content's natural width even
+     inside a wrapping flex row. Without this, a long transcript pushed
+     .voice-live wider than the viewport regardless of its max-width. */
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.voice-heard em {
+  font-style: normal;
+  opacity: 0.6;
+}
+
+.voice-transcript {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.voice-transcript-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  margin-bottom: 4px;
+}
+
+.voice-drafts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.voice-draft {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.voice-draft-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.voice-draft-row .input {
+  flex: 1;
+  font-weight: 550;
+}
+
+.voice-draft-fields {
+  display: grid;
+  grid-template-columns: 1fr 90px 1fr;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.voice-draft-why {
+  margin: 8px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  color: var(--text-subtle);
+}
+
+@media (max-width: 560px) {
+  .voice-draft-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+  .voice-draft-fields select:last-child {
+    grid-column: 1 / -1;
+  }
+  .voice-live {
+    max-width: none;
+  }
+}

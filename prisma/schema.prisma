@@ -226,6 +226,27 @@ model TrafficBillingIssue {
   @@index([runId])
 }
 
+/**
+ * A dictated note and the tasks it produced.
+ *
+ * Kept so a bad batch can be undone in one action and so you can see what was
+ * actually heard when a task reads oddly — speech recognition mangles proper
+ * nouns ("O'Regan", "TRFFK") often enough that the raw transcript is the only
+ * way to tell a mis-hearing from a mis-parse.
+ *
+ * `taskIds` is a JSON array rather than a relation on purpose: adding a
+ * foreign key to Task would mean altering a table the rest of the dashboard
+ * depends on, and this feature has no business doing that.
+ */
+model VoiceNote {
+  id         Int      @id @default(autoincrement())
+  transcript String
+  taskIds    String   @default("[]")
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 model NotificationRule {
   id      Int     @id @default(autoincrement())
   type    String // task_due | task_overdue | daily_digest
