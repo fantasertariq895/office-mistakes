@@ -71,3 +71,17 @@ export function previousWeek(weekKey: string): string {
   d.setUTCDate(d.getUTCDate() - 7);
   return toDateInputValue(d);
 }
+
+/**
+ * The Monday for "this week" using the *server's* clock (UTC on Vercel) —
+ * for the cron backstop only (see app/api/cron/trader-media-weekly), which
+ * runs with no viewer attached and so has no local timezone to be faithful
+ * to. Never use this for anything user-facing: localCurrentWeekKey is the
+ * one that matters when a person is actually looking at the screen, same
+ * split lib/monthly-reset.ts's server-local monthKey() accepts for the same
+ * reason — a backstop firing a few hours off near a Monday-morning boundary
+ * is a much smaller problem than showing someone the wrong week.
+ */
+export function serverCurrentWeekKey(d = new Date()): string {
+  return toDateInputValue(mondayOfWeek(d));
+}

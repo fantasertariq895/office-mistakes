@@ -268,6 +268,19 @@ export default function TraderMediaPage() {
   const thisWeek = localCurrentWeekKey();
   const thisWeekStarted = (data?.runs ?? []).some((r) => r.week === thisWeek);
 
+  // Recurring by default: the current week starts itself the moment the page
+  // loads, so there's nothing to remember to click each Monday. History isn't
+  // lost by this — every week is its own permanent run row (see
+  // TraderMediaRun in prisma/schema.prisma), so "starting" a new week never
+  // touches the previous one, completed or not. A Vercel Cron backstop
+  // (app/api/cron/trader-media-weekly) covers the case where nobody opens the
+  // app on the Monday itself.
+  useEffect(() => {
+    if (!data || phases.length === 0 || thisWeekStarted || starting) return;
+    void startWeek(thisWeek);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, phases.length, thisWeekStarted, starting, thisWeek]);
+
   if (workspace.error && !data) {
     return (
       <div className="page">

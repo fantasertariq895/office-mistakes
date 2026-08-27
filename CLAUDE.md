@@ -35,9 +35,12 @@ the original SQLite file approach could not survive deployment at all.
 - **Needs verification, not confirmed in this session:**
   - Whether `CRON_SECRET` is actually set in Vercel's environment variables.
     Without it, `/api/cron/monthly-reset` returns 500 when Vercel's daily
-    cron fires. This is a backstop only — the monthly reset's *primary*
-    trigger is every `/api/board` load (see `lib/monthly-reset.ts`), which
-    works regardless — but the backstop itself is unverified.
+    cron fires, and likewise `/api/cron/trader-media-weekly` (added later,
+    Monday-only) returns 500 too — both use the same bearer-token check. Both
+    are backstops only: the monthly reset's primary trigger is every
+    `/api/board` load, and the weekly Trader Media run's primary trigger is
+    every `/trader-media` page load — both work regardless of this var, but
+    the backstops themselves are unverified.
   - Whether `FORCE_PIN`/`INITIAL_PIN` are set. **They should NOT be** — the
     user explicitly said "don't set any pin for this project." If a future
     session finds them set, that was not an intentional instruction and is
@@ -218,6 +221,19 @@ which the seed never touches once a phase exists).
   reimplementing it. `requireWeek` (in `server.ts`) rejects any date that
   isn't a real, actual Monday with a 400 — the server never computes "this
   week" itself, same reasoning as `requireMonth`.
+- **The current week starts itself — unlike Traffic Billing's manual "Start
+  <month>".** The user explicitly asked for this: complete one Monday, and
+  the next Monday's checklist should just be there, no button to remember.
+  `app/trader-media/page.tsx` auto-calls `startWeek` on load whenever the
+  viewer's current week (`localCurrentWeekKey`) has no run yet. This doesn't
+  lose anything — every week is its own permanent `TraderMediaRun` row, so
+  auto-starting a new one never touches a completed one. A Vercel Cron
+  backstop (`/api/cron/trader-media-weekly`, Monday-only in `vercel.json`,
+  `ensureThisWeekRun` in `lib/trader-media/server.ts`) covers the case where
+  nobody opens the app on the Monday itself — same primary-trigger-plus-cron
+  shape as the monthly checklist reset, mirrored on purpose. That backstop
+  needs `CRON_SECRET` set in Vercel, same as the monthly reset's — see
+  "Needs verification" under Current live status.
 
 Verified end-to-end against the live API and the rendered UI: non-Monday /
 malformed / nonexistent dates rejected 400, run creation idempotent on

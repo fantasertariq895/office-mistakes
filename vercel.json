@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/monthly-reset",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/trader-media-weekly",
+      "schedule": "0 3 * * 1"
     }
   ]
 }

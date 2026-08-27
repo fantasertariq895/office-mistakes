@@ -8,10 +8,15 @@
  * its own local week (via lib/trader-media/week.ts's localCurrentWeekKey)
  * when starting a run; the server only ever validates the string and looks
  * up what already exists.
+ *
+ * The one exception is ensureThisWeekRun below, the cron backstop — it has no
+ * viewer to be faithful to, so it uses the server's own clock on purpose. See
+ * that function's doc comment.
  */
 import { badRequest } from "@/lib/api-helpers";
 import { fromDateInputValue, toDateInputValue } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
+import { serverCurrentWeekKey } from "@/lib/trader-media/week";
 import type {
   TmIssue,
   TmMistake,
@@ -170,4 +175,26 @@ export async function loadWorkspace(week?: string | null): Promise<TmWorkspace> 
 /** Next sortOrder in a list, leaving room to insert between existing rows. */
 export function nextSortOrder(existing: { sortOrder: number }[]): number {
   return existing.reduce((max, row) => Math.max(max, row.sortOrder), 0) + 100;
+}
+
+export type EnsureWeekResult = { created: boolean; week: string };
+
+/**
+ * Backstop for the recurring weekly run. The primary trigger is the page
+ * itself, which auto-starts the viewer's current week on load (see
+ * app/trader-media/page.tsx) — this only matters if nobody opens the app on
+ * a given Monday, e.g. away that week. Uses the server's own clock
+ * (serverCurrentWeekKey), not a viewer's, since a cron call has no viewer.
+ * Idempotent — find-or-create on `week`, same as the runs POST route, so a
+ * duplicate or retried call is a harmless no-op. Scheduled Monday-only in
+ * vercel.json (unlike the monthly reset's daily schedule), since there's no
+ * "every day until it matters" case here — the week key only changes weekly.
+ */
+export async function ensureThisWeekRun(): Promise<EnsureWeekResult> {
+  const week = serverCurrentWeekKey();
+  const existing = await prisma.traderMediaRun.findUnique({ where: { week } });
+  if (existing) return { created: false, week };
+
+  await prisma.traderMediaRun.create({ data: { week } });
+  return { created: true, week };
 }
