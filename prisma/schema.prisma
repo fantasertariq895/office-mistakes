@@ -227,6 +227,131 @@ model TrafficBillingIssue {
 }
 
 /**
+ * Trader Media — weekly (Monday-anchored) media revenue reporting checklist.
+ * Architecturally a clone of the TrafficBilling* models above, with "month"
+ * swapped for "Monday-dated week" and one addition (isOwnerPending) neither
+ * needed: this SOP has phases that are explicitly not the user's job yet
+ * (Yuvika's FP&A judgment, the Benoit review, deck production) but are kept
+ * visible so ownership can grow into them without a schema change. See
+ * CLAUDE.md for the full rationale.
+ */
+model TraderMediaPhase {
+  id        Int      @id @default(autoincrement())
+  /** Stable slug ("p04"). Seeds match on this, so re-seeding never duplicates. */
+  key       String   @unique
+  number    Int
+  title     String
+  /** Lead-in prose from the SOP. */
+  intro     String?
+  /** True for phases that are Yuvika's / not yet the user's job (7–13). */
+  isOwnerPending Boolean @default(false)
+  sortOrder Int      @default(0)
+  isCustom  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  steps    TraderMediaStep[]
+  mistakes TraderMediaMistake[]
+  issues   TraderMediaIssue[]
+}
+
+model TraderMediaStep {
+  id         Int      @id @default(autoincrement())
+  phaseId    Int
+  key        String   @unique
+  /** Sub-heading this step sits under, e.g. "Update PIO Data". */
+  groupLabel String?
+  text       String
+  /** JSON array of reference bullets shown under the step, not tickable. */
+  notes      String?
+  isHighRisk Boolean  @default(false)
+  isCustom   Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  phase  TraderMediaPhase       @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  states TraderMediaStepState[]
+
+  @@index([phaseId])
+}
+
+model TraderMediaMistake {
+  id        Int     @id @default(autoincrement())
+  /** Null = applies to the whole SOP, not one phase. */
+  phaseId   Int?
+  text      String
+  sortOrder Int     @default(0)
+  isCustom  Boolean @default(false)
+
+  phase TraderMediaPhase? @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+
+  @@index([phaseId])
+}
+
+/** One execution of the SOP, for one Monday-anchored week. Kept indefinitely. */
+model TraderMediaRun {
+  id          Int       @id @default(autoincrement())
+  week        String    @unique // "2026-08-24" — the Monday
+  status      String    @default("in_progress") // in_progress | completed
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  states TraderMediaStepState[]
+  issues TraderMediaIssue[]
+
+  @@index([status])
+}
+
+/**
+ * Created lazily — an untouched step has no row and reads as "open". A fresh
+ * week is one insert, not N.
+ */
+model TraderMediaStepState {
+  id        Int      @id @default(autoincrement())
+  runId     Int
+  stepId    Int
+  state     String   @default("open") // open | done | na
+  note      String?
+  updatedAt DateTime @updatedAt
+
+  run  TraderMediaRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  step TraderMediaStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, stepId])
+  @@index([runId])
+}
+
+/** Something that went wrong during a run, logged against the phase it hit. */
+model TraderMediaIssue {
+  id        Int      @id @default(autoincrement())
+  runId     Int
+  phaseId   Int
+  text      String
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  run   TraderMediaRun   @relation(fields: [runId], references: [id], onDelete: Cascade)
+  phase TraderMediaPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+}
+
+/**
+ * One-time "Access / Things You Need" setup checklist. NOT scoped to any
+ * weekly run, never resets, checked once ever. Deliberately outside the
+ * Phase/Step/Run/StepState system — it has no per-run history and no weekly
+ * reset, so reusing that machinery would mean modeling a fake run just to
+ * hang state off.
+ */
+model TraderMediaSetupItem {
+  id        Int       @id @default(autoincrement())
+  key       String    @unique
+  text      String
+  sortOrder Int       @default(0)
+  done      Boolean   @default(false)
+  doneAt    DateTime?
+}
+
+/**
  * A dictated note and the tasks it produced.
  *
  * Kept so a bad batch can be undone in one action and so you can see what was

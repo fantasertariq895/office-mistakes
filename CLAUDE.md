@@ -171,6 +171,63 @@ next month starting, and deleting a step/phase/run cascades with no orphans.
 Test runs created during that check were deleted afterwards — the SOP ships
 seeded with **zero runs**, so the first "Start <month>" is the user's.
 
+## Trader Media workspace (third tab, `/trader-media`)
+
+A weekly (Monday-anchored, spilling into Tuesday for the exec deck)
+checklist for the "Weekly Media Revenue Reporting" process — updating a
+media-revenue forecast workbook, sense-checking it, handing it to Yuvika.
+**13 phases, 29 steps, 7 mistakes-to-avoid, 6 one-time setup items.**
+Architecturally a clone of Traffic Billing above — same reasons (a
+`ChecklistItem` can't survive the monthly wipe or express a run history) —
+with "month" swapped for "Monday-dated week" throughout. Own tables
+(`TraderMedia*` in `prisma/schema.prisma`), own route, own `lib/trader-media/`
+— **no contact with Commission, ChecklistItem, Task, or any `TrafficBilling*`
+table.**
+
+**Source**: [Media Related steps (1).docx](Media%20Related%20steps%20(1).docx)
+(Yuvika's Zoom notes + full transcript). Transcribed into
+`lib/trader-media/sop-template.ts`, whose own doc comment records the
+transcription rules — read that before re-syncing the `.docx`.
+
+**Content ownership is load-bearing.** The doc's own "Your Role RIGHT NOW"
+section is explicit that the user's current job is only Phases 1–6 (locate
+file → update PIO/Salesforce/Programmatic → set the control date → Refresh
+All → sense checks → hand off to Yuvika). Phases 7–13 (Yuvika's FP&A
+judgment, the 12:15 call, the Benoit review, locking the forecast, and deck
+production) are seeded `isOwnerPending: true` on `TraderMediaPhase` — shown
+as a "Not yet yours" badge in the phase card and a small user-icon marker in
+the rail, but **left fully interactive, not locked**, so ownership can grow
+into them later without a schema change. Getting this flag wrong on a phase
+either hides real ownership or overstates it — if the user's responsibilities
+shift, update `isOwnerPending` in `sop-template.ts` and re-seed; the seed
+re-syncs it on every run for non-custom phases (unlike `title`/`intro`,
+which the seed never touches once a phase exists).
+
+**Differences from Traffic Billing, deliberately:**
+- **No stage grouping** (no `stages.ts`, no `stageKey`) — 13 phases is too
+  few to need it; the rail is a flat list.
+- **One-time "Access / Things You Need" checklist** lives in its own table,
+  `TraderMediaSetupItem` — no `runId`, no relation to `TraderMediaRun` at
+  all. It's seeded once (ShareDrive access, BERT distribution, recurring
+  call invites), checked off once, never resets. Folding it into the
+  Phase/Step/Run system would have meant faking a permanent "run" just to
+  hang state off.
+- **`lib/trader-media/week.ts`** is the week analogue of
+  `lib/traffic-billing/month.ts`, but reuses `lib/date.ts`'s
+  `fromDateInputValue`/`toDateInputValue` for the UTC round-trip rather than
+  reimplementing it. `requireWeek` (in `server.ts`) rejects any date that
+  isn't a real, actual Monday with a 400 — the server never computes "this
+  week" itself, same reasoning as `requireMonth`.
+
+Verified end-to-end against the live API and the rendered UI: non-Monday /
+malformed / nonexistent dates rejected 400, run creation idempotent on
+`week`, per-week state isolation, cascading deletes leave no orphans, the
+owner-pending badge/marker render exactly on phases 7–13 and stay fully
+interactive, and the setup checklist is provably unaffected by run
+mutations. Test runs and the test setup-toggle from that check were removed
+afterward — ships with **zero runs** and all setup items unchecked, so the
+first "Start <week>" and the first access-item tick are the user's.
+
 ## Architecture decisions and why (read before changing these)
 
 - **Postgres, not SQLite** (`prisma/schema.prisma`): Vercel serverless

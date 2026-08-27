@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useFetch } from "@/lib/hooks";
 import { formatMonthShort } from "@/lib/traffic-billing/month";
+import { formatWeekShort } from "@/lib/trader-media/week";
 import { useApp } from "./AppProvider";
-import { IconChart, IconHome, IconMoon, IconSettings, IconSun } from "./icons";
+import { IconChart, IconHome, IconLayers, IconMoon, IconSettings, IconSun } from "./icons";
 
 type TbSummary = {
   run: { id: number; month: string; status: string } | null;
@@ -14,11 +15,18 @@ type TbSummary = {
   percent: number;
 };
 
+type TmSummary = {
+  run: { id: number; week: string; status: string } | null;
+  total: number;
+  settled: number;
+  percent: number;
+};
+
 /**
- * Two workspaces: Home (tasks + commission checklists) and Traffic Billing
- * (the monthly SOP run). Settings sits in the footer — it's the only route to
- * backups, the PIN lock and notification toggles, and doesn't belong in the
- * daily flow.
+ * Three workspaces: Home (tasks + commission checklists), Traffic Billing
+ * (the monthly SOP run), and Trader Media (the weekly SOP run). Settings sits
+ * in the footer — it's the only route to backups, the PIN lock and
+ * notification toggles, and doesn't belong in the daily flow.
  */
 export function Sidebar() {
   const pathname = usePathname();
@@ -30,6 +38,12 @@ export function Sidebar() {
   const tbActive = pathname.startsWith("/traffic-billing");
   const tbBadge = tb.data?.run
     ? `${formatMonthShort(tb.data.run.month)} · ${tb.data.percent}%`
+    : null;
+
+  const tm = useFetch<TmSummary>("/api/trader-media/summary", version);
+  const tmActive = pathname.startsWith("/trader-media");
+  const tmBadge = tm.data?.run
+    ? `${formatWeekShort(tm.data.run.week)} · ${tm.data.percent}%`
     : null;
 
   const active = pathname === "/";
@@ -92,6 +106,24 @@ export function Sidebar() {
         {tbBadge && (
           <span className="nav-sub" aria-hidden="true">
             {tbBadge}
+          </span>
+        )}
+      </Link>
+
+      <Link
+        href="/trader-media"
+        className={`nav-item${tmActive ? " active" : ""}`}
+        aria-current={tmActive ? "page" : undefined}
+        aria-label={tmBadge ? `Trader Media — ${tmBadge} complete` : "Trader Media"}
+        title="Trader Media"
+      >
+        <span className="nav-icon" aria-hidden="true">
+          <IconLayers size={17} />
+        </span>
+        <span className="nav-label">Trader Media</span>
+        {tmBadge && (
+          <span className="nav-sub" aria-hidden="true">
+            {tmBadge}
           </span>
         )}
       </Link>

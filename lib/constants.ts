@@ -95,6 +95,39 @@ export function isTbRunStatus(v: unknown): v is TbRunStatus {
   return typeof v === "string" && (TB_RUN_STATUSES as readonly string[]).includes(v);
 }
 
+/**
+ * Trader Media — same tri-state/run-status shape as Traffic Billing above,
+ * just renamed. Kept as a separate set of constants (not shared) so the two
+ * features stay fully independent, matching how their DB tables don't touch.
+ */
+export const TM_STEP_STATES = ["open", "done", "na"] as const;
+export type TmStepState = (typeof TM_STEP_STATES)[number];
+
+export const TM_STEP_STATE_LABELS: Record<TmStepState, string> = {
+  open: "Not done",
+  done: "Done",
+  na: "Not applicable",
+};
+
+export const TM_RUN_STATUSES = ["in_progress", "completed"] as const;
+export type TmRunStatus = (typeof TM_RUN_STATUSES)[number];
+
+export function isTmStepState(v: unknown): v is TmStepState {
+  return typeof v === "string" && (TM_STEP_STATES as readonly string[]).includes(v);
+}
+
+export function isTmRunStatus(v: unknown): v is TmRunStatus {
+  return typeof v === "string" && (TM_RUN_STATUSES as readonly string[]).includes(v);
+}
+
+/**
+ * Trader Media's single phase-accent color. There's no stage grouping (only
+ * 13 phases, too few to need Traffic Billing's 9-stage rail sections), so
+ * one color drives the "--stage" CSS variable everywhere Traffic Billing
+ * would look up a per-stage color.
+ */
+export const TM_ACCENT_COLOR = "#4F46E5";
+
 export function isTaskStatus(v: unknown): v is TaskStatus {
   return typeof v === "string" && (TASK_STATUSES as readonly string[]).includes(v);
 }
