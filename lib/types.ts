@@ -2,6 +2,13 @@
  * Shapes as they cross the API boundary (dates serialised to ISO strings).
  */
 import type {
+  FounderCostType,
+  FounderPipelineStatus,
+  FounderPlanStepState,
+  FounderRiskLevel,
+  FounderTaskPriority,
+  FounderTaskStatus,
+  FounderTechStatus,
   TaskPriority,
   TaskStatus,
   TbRunStatus,
@@ -287,4 +294,233 @@ export type TmSetupItem = {
   sortOrder: number;
   done: boolean;
   doneAt: string | null;
+};
+
+/* ------------------------------------------------------------- Founder OS -- */
+
+export type FoPipelineContact = {
+  id: number;
+  name: string;
+  company: string | null;
+  channel: string | null;
+  dateContacted: string | null;
+  status: FounderPipelineStatus;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type FoTask = {
+  id: number;
+  title: string;
+  description: string | null;
+  status: FounderTaskStatus;
+  priority: FounderTaskPriority;
+  dueDate: string | null;
+  sortOrder: number;
+  /** Monday-dated week key ("2026-08-24") if picked for the Weekly Planner. */
+  plannedForWeek: string | null;
+  createdAt: string;
+  completedAt: string | null;
+};
+
+export type FoSettings = {
+  id: number;
+  startDate: string | null;
+  updatedAt: string;
+};
+
+/** One stat tile — Phase 2 (Finance/Legal) adds more; the strip component never changes. */
+export type FoStatTile = {
+  id: string;
+  label: string;
+  value: string;
+  tone?: "default" | "danger" | "success";
+};
+
+/** One "Do This Now" row. */
+export type FoDoNowItem = {
+  id: string;
+  source: "task" | "pipeline";
+  title: string;
+  detail: string | null;
+};
+
+export type FoDashboard = {
+  settings: FoSettings;
+  stats: FoStatTile[];
+  doNow: FoDoNowItem[];
+};
+
+/* --------------------------------------------------- Founder OS, Phase 2/3 */
+
+/** BMC blocks, ICP fields, Brand copy, Funding Notes, Hiring notes, Roadmap months. */
+export type FoTextBlock = {
+  id: number;
+  key: string;
+  section: string;
+  label: string;
+  content: string | null;
+  sortOrder: number;
+  updatedAt: string;
+};
+
+export type FoScore = {
+  id: number;
+  key: string;
+  label: string;
+  score: number;
+  sortOrder: number;
+};
+
+export type FoCompetitor = {
+  id: number;
+  name: string;
+  service: string | null;
+  price: string | null;
+  targetCustomer: string | null;
+  strengths: string | null;
+  weaknesses: string | null;
+  positioning: string | null;
+  opportunity: string | null;
+  isCustom: boolean;
+  sortOrder: number;
+};
+
+export type FoCostItem = {
+  id: number;
+  name: string;
+  type: FounderCostType;
+  amountCad: number;
+  isCustom: boolean;
+  sortOrder: number;
+};
+
+export type FoRevenueMonth = {
+  id: number;
+  monthNumber: number;
+  clients: number;
+  avgRevenuePerClient: number;
+  costOfDelivery: number;
+};
+
+export type FoPricingTier = {
+  id: number;
+  name: string;
+  priceCad: number | null;
+  description: string | null;
+  sortOrder: number;
+};
+
+export type FoTechStackItem = {
+  id: number;
+  tool: string;
+  purpose: string | null;
+  costCad: number | null;
+  priority: FounderTaskPriority;
+  status: FounderTechStatus;
+  isCustom: boolean;
+  sortOrder: number;
+};
+
+export type FoRiskItem = {
+  id: number;
+  risk: string;
+  probability: FounderRiskLevel;
+  impact: FounderRiskLevel;
+  prevention: string | null;
+  backupPlan: string | null;
+  isCustom: boolean;
+  sortOrder: number;
+};
+
+export type FoMarketingWeek = {
+  id: number;
+  weekNumber: number;
+  plannedOutreach: number | null;
+  plannedContent: string | null;
+  notes: string | null;
+};
+
+export type FoChecklistItem = {
+  id: number;
+  checklistId: number;
+  text: string;
+  explanation: string | null;
+  dayLabel: string | null;
+  done: boolean;
+  doneAt: string | null;
+  isCustom: boolean;
+  sortOrder: number;
+};
+
+export type FoChecklist = {
+  id: number;
+  key: string;
+  title: string;
+  items: FoChecklistItem[];
+};
+
+/** SOPs library (section "sop") and Document Templates (section "template"). */
+export type FoDocument = {
+  id: number;
+  key: string | null;
+  section: string;
+  title: string;
+  content: string | null;
+  isCustom: boolean;
+  sortOrder: number;
+  updatedAt: string;
+};
+
+export type FoLogEntry = {
+  id: number;
+  decision: string;
+  reasoning: string | null;
+  alternatives: string | null;
+  outcome: string | null;
+  createdAt: string;
+};
+
+/* -------------------------------------------------------- Founder OS Plan -- */
+
+export type FoPlanStep = {
+  id: number;
+  phaseId: number;
+  key: string;
+  groupLabel: string | null;
+  text: string;
+  notes: string[];
+  state: FounderPlanStepState;
+  note: string | null;
+  doneAt: string | null;
+  isHighRisk: boolean;
+  isCustom: boolean;
+  sortOrder: number;
+};
+
+export type FoPlanMistake = {
+  id: number;
+  phaseId: number | null;
+  text: string;
+  sortOrder: number;
+  isCustom: boolean;
+};
+
+export type FoPlanPhase = {
+  id: number;
+  key: string;
+  number: number;
+  title: string;
+  intro: string | null;
+  dayRange: string | null;
+  sortOrder: number;
+  isCustom: boolean;
+  steps: FoPlanStep[];
+  mistakes: FoPlanMistake[];
+};
+
+export type FoPlan = {
+  phases: FoPlanPhase[];
+  globalMistakes: FoPlanMistake[];
 };

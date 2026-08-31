@@ -137,3 +137,126 @@ export function isTaskPriority(v: unknown): v is TaskPriority {
     typeof v === "string" && (TASK_PRIORITIES as readonly string[]).includes(v)
   );
 }
+
+/* ------------------------------------------------------------- Founder OS --
+ * Own status/priority sets, deliberately not reused from TASK_STATUSES/
+ * TaskPriority above: the Kanban board needs a 5th status (Blocked) and a
+ * 4th priority (Critical) that the Home-page Tasks feature doesn't have —
+ * extending those would scope-creep an unrelated feature.
+ */
+
+export const FOUNDER_PIPELINE_STATUSES = [
+  "contacted",
+  "replied",
+  "call_booked",
+  "proposal_sent",
+  "closed",
+  "no_response",
+] as const;
+export type FounderPipelineStatus = (typeof FOUNDER_PIPELINE_STATUSES)[number];
+
+export const FOUNDER_PIPELINE_STATUS_LABELS: Record<FounderPipelineStatus, string> = {
+  contacted: "Contacted",
+  replied: "Replied",
+  call_booked: "Call booked",
+  proposal_sent: "Proposal sent",
+  closed: "Closed",
+  no_response: "No response",
+};
+
+export function isFounderPipelineStatus(v: unknown): v is FounderPipelineStatus {
+  return (
+    typeof v === "string" &&
+    (FOUNDER_PIPELINE_STATUSES as readonly string[]).includes(v)
+  );
+}
+
+/** Array order IS the Kanban column order — the board maps over this directly. */
+export const FOUNDER_TASK_STATUSES = [
+  "not_started",
+  "in_progress",
+  "waiting",
+  "completed",
+  "blocked",
+] as const;
+export type FounderTaskStatus = (typeof FOUNDER_TASK_STATUSES)[number];
+
+export const FOUNDER_TASK_STATUS_LABELS: Record<FounderTaskStatus, string> = {
+  not_started: "Not started",
+  in_progress: "In progress",
+  waiting: "Waiting",
+  completed: "Completed",
+  blocked: "Blocked",
+};
+
+export function isFounderTaskStatus(v: unknown): v is FounderTaskStatus {
+  return (
+    typeof v === "string" && (FOUNDER_TASK_STATUSES as readonly string[]).includes(v)
+  );
+}
+
+export const FOUNDER_TASK_PRIORITIES = ["critical", "high", "medium", "low"] as const;
+export type FounderTaskPriority = (typeof FOUNDER_TASK_PRIORITIES)[number];
+
+export const FOUNDER_TASK_PRIORITY_LABELS: Record<FounderTaskPriority, string> = {
+  critical: "Critical",
+  high: "High",
+  medium: "Medium",
+  low: "Low",
+};
+
+export function isFounderTaskPriority(v: unknown): v is FounderTaskPriority {
+  return (
+    typeof v === "string" &&
+    (FOUNDER_TASK_PRIORITIES as readonly string[]).includes(v)
+  );
+}
+
+/* --------------------------------------------------- Founder OS, Phase 2/3 */
+
+export const FOUNDER_COST_TYPES = ["one_time", "recurring"] as const;
+export type FounderCostType = (typeof FOUNDER_COST_TYPES)[number];
+export const FOUNDER_COST_TYPE_LABELS: Record<FounderCostType, string> = {
+  one_time: "One-time",
+  recurring: "Recurring",
+};
+export function isFounderCostType(v: unknown): v is FounderCostType {
+  return typeof v === "string" && (FOUNDER_COST_TYPES as readonly string[]).includes(v);
+}
+
+export const FOUNDER_TECH_STATUSES = ["not_set_up", "set_up"] as const;
+export type FounderTechStatus = (typeof FOUNDER_TECH_STATUSES)[number];
+export const FOUNDER_TECH_STATUS_LABELS: Record<FounderTechStatus, string> = {
+  not_set_up: "Not set up",
+  set_up: "Set up",
+};
+export function isFounderTechStatus(v: unknown): v is FounderTechStatus {
+  return typeof v === "string" && (FOUNDER_TECH_STATUSES as readonly string[]).includes(v);
+}
+
+export const FOUNDER_RISK_LEVELS = ["low", "medium", "high"] as const;
+export type FounderRiskLevel = (typeof FOUNDER_RISK_LEVELS)[number];
+export const FOUNDER_RISK_LEVEL_LABELS: Record<FounderRiskLevel, string> = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+};
+export function isFounderRiskLevel(v: unknown): v is FounderRiskLevel {
+  return typeof v === "string" && (FOUNDER_RISK_LEVELS as readonly string[]).includes(v);
+}
+
+/** $30,000/yr is the CRA's HST-registration trigger — surfaced in the Legal checklist and Finance module. */
+export const HST_REGISTRATION_THRESHOLD_CAD = 30_000;
+
+/** The $2,000 CAD one-time-spend cap from the source doc's budget. */
+export const FOUNDER_STARTUP_BUDGET_CAP_CAD = 2_000;
+
+/** Tri-state for the master 90-day Plan checklist — same shape as TM_STEP_STATES. */
+export const FOUNDER_PLAN_STEP_STATES = ["open", "done", "na"] as const;
+export type FounderPlanStepState = (typeof FOUNDER_PLAN_STEP_STATES)[number];
+export function isFounderPlanStepState(v: unknown): v is FounderPlanStepState {
+  return typeof v === "string" && (FOUNDER_PLAN_STEP_STATES as readonly string[]).includes(v);
+}
+
+/** The Plan checklist's single phase-accent color — no stage grouping, 13 phases is a flat rail. */
+export const FOUNDER_PLAN_ACCENT_COLOR = "#0D9488";

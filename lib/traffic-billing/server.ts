@@ -6,9 +6,14 @@
  * viewer is somewhere else, and near a month boundary those disagree. The
  * client sends its own local month when starting a run; the server only ever
  * validates the string and looks up what already exists.
+ *
+ * The one exception is ensureThisMonthRun below, the cron backstop — it has
+ * no viewer to be faithful to, so it uses the server's own clock on
+ * purpose. See that function's doc comment.
  */
 import { badRequest } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
+import { serverCurrentMonthKey } from "@/lib/traffic-billing/month";
 import type {
   TbIssue,
   TbMistake,
@@ -158,4 +163,26 @@ export async function loadWorkspace(month?: string | null): Promise<TbWorkspace>
 /** Next sortOrder in a list, leaving room to insert between existing rows. */
 export function nextSortOrder(existing: { sortOrder: number }[]): number {
   return existing.reduce((max, row) => Math.max(max, row.sortOrder), 0) + 100;
+}
+
+export type EnsureMonthResult = { created: boolean; month: string };
+
+/**
+ * Backstop for the recurring monthly run. The primary trigger is the page
+ * itself, which auto-starts the viewer's current month on load (see
+ * app/traffic-billing/page.tsx) — this only matters if nobody opens the app
+ * on the 1st itself. Uses the server's own clock (serverCurrentMonthKey),
+ * not a viewer's, since a cron call has no viewer. Idempotent —
+ * find-or-create on `month`, same as the runs POST route, so a duplicate or
+ * retried call is a harmless no-op. Scheduled 1st-of-the-month-only in
+ * vercel.json, same reasoning Trader Media's weekly backstop uses for its
+ * Monday-only schedule.
+ */
+export async function ensureThisMonthRun(): Promise<EnsureMonthResult> {
+  const month = serverCurrentMonthKey();
+  const existing = await prisma.trafficBillingRun.findUnique({ where: { month } });
+  if (existing) return { created: false, month };
+
+  await prisma.trafficBillingRun.create({ data: { month } });
+  return { created: true, month };
 }

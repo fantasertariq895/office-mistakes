@@ -5,8 +5,18 @@ import { usePathname } from "next/navigation";
 import { useFetch } from "@/lib/hooks";
 import { formatMonthShort } from "@/lib/traffic-billing/month";
 import { formatWeekShort } from "@/lib/trader-media/week";
+import { runwayDayNumber } from "@/lib/founder-os/timeline";
+import type { FoSettings } from "@/lib/types";
 import { useApp } from "./AppProvider";
-import { IconChart, IconHome, IconLayers, IconMoon, IconSettings, IconSun } from "./icons";
+import {
+  IconChart,
+  IconHome,
+  IconLayers,
+  IconMoon,
+  IconSettings,
+  IconSun,
+  IconTasks,
+} from "./icons";
 
 type TbSummary = {
   run: { id: number; month: string; status: string } | null;
@@ -23,9 +33,10 @@ type TmSummary = {
 };
 
 /**
- * Three workspaces: Home (tasks + commission checklists), Traffic Billing
- * (the monthly SOP run), and Trader Media (the weekly SOP run). Settings sits
- * in the footer — it's the only route to backups, the PIN lock and
+ * Two sidebar groups: "Work" (Home, Traffic Billing, Trader Media) and
+ * "Personal" (Founder OS) — a real separation, not just a visual one, since
+ * Founder OS's data is fully isolated from everything above it. Settings
+ * sits in the footer — it's the only route to backups, the PIN lock and
  * notification toggles, and doesn't belong in the daily flow.
  */
 export function Sidebar() {
@@ -45,6 +56,14 @@ export function Sidebar() {
   const tmBadge = tm.data?.run
     ? `${formatWeekShort(tm.data.run.week)} · ${tm.data.percent}%`
     : null;
+
+  // Reuses the settings endpoint rather than adding a summary route — Phase
+  // 1's badge needs nothing beyond startDate, unlike tb/tm's percent-through
+  // aggregate.
+  const fo = useFetch<{ settings: FoSettings }>("/api/founder-os/settings", version);
+  const foActive = pathname.startsWith("/founder-os");
+  const foDay = runwayDayNumber(fo.data?.settings.startDate ?? null);
+  const foBadge = foDay !== null ? `Day ${foDay}` : null;
 
   const active = pathname === "/";
   const overdue = counts.overdue;
@@ -66,67 +85,93 @@ export function Sidebar() {
         </span>
       </div>
 
-      <Link
-        href="/"
-        className={`nav-item${active ? " active" : ""}`}
-        aria-current={active ? "page" : undefined}
-        // The label is display:none on narrow widths, which strips it from the
-        // accessibility tree — so name the link explicitly, always.
-        aria-label={badgeText ? `Home — ${badgeText}` : "Home"}
-        title="Home"
-        style={{ position: "relative" }}
-      >
-        <span className="nav-icon" aria-hidden="true">
-          <IconHome size={17} />
-        </span>
-        <span className="nav-label">Home</span>
-        {badge > 0 && (
-          <span
-            className={`nav-badge${badgeIsOverdue ? " overdue" : ""}`}
-            aria-hidden="true"
-          >
-            {badge > 99 ? "99+" : badge}
-          </span>
-        )}
-      </Link>
+      <div className="nav-section">
+        <div className="nav-section-label">Work</div>
 
-      <Link
-        href="/traffic-billing"
-        className={`nav-item${tbActive ? " active" : ""}`}
-        aria-current={tbActive ? "page" : undefined}
-        aria-label={
-          tbBadge ? `Traffic Billing — ${tbBadge} complete` : "Traffic Billing"
-        }
-        title="Traffic Billing"
-      >
-        <span className="nav-icon" aria-hidden="true">
-          <IconChart size={17} />
-        </span>
-        <span className="nav-label">Traffic Billing</span>
-        {tbBadge && (
-          <span className="nav-sub" aria-hidden="true">
-            {tbBadge}
+        <Link
+          href="/"
+          className={`nav-item${active ? " active" : ""}`}
+          aria-current={active ? "page" : undefined}
+          // The label is display:none on narrow widths, which strips it from the
+          // accessibility tree — so name the link explicitly, always.
+          aria-label={badgeText ? `Home — ${badgeText}` : "Home"}
+          title="Home"
+          style={{ position: "relative" }}
+        >
+          <span className="nav-icon" aria-hidden="true">
+            <IconHome size={17} />
           </span>
-        )}
-      </Link>
+          <span className="nav-label">Home</span>
+          {badge > 0 && (
+            <span
+              className={`nav-badge${badgeIsOverdue ? " overdue" : ""}`}
+              aria-hidden="true"
+            >
+              {badge > 99 ? "99+" : badge}
+            </span>
+          )}
+        </Link>
 
-      <Link
-        href="/trader-media"
-        className={`nav-item${tmActive ? " active" : ""}`}
-        aria-current={tmActive ? "page" : undefined}
-        aria-label={tmBadge ? `Trader Media — ${tmBadge} complete` : "Trader Media"}
-        title="Trader Media"
-      >
-        <span className="nav-icon" aria-hidden="true">
-          <IconLayers size={17} />
-        </span>
-        <span className="nav-label">Trader Media</span>
-        {tmBadge && (
-          <span className="nav-sub" aria-hidden="true">
-            {tmBadge}
+        <Link
+          href="/traffic-billing"
+          className={`nav-item${tbActive ? " active" : ""}`}
+          aria-current={tbActive ? "page" : undefined}
+          aria-label={
+            tbBadge ? `Traffic Billing — ${tbBadge} complete` : "Traffic Billing"
+          }
+          title="Traffic Billing"
+        >
+          <span className="nav-icon" aria-hidden="true">
+            <IconChart size={17} />
           </span>
-        )}
-      </Link>
+          <span className="nav-label">Traffic Billing</span>
+          {tbBadge && (
+            <span className="nav-sub" aria-hidden="true">
+              {tbBadge}
+            </span>
+          )}
+        </Link>
+
+        <Link
+          href="/trader-media"
+          className={`nav-item${tmActive ? " active" : ""}`}
+          aria-current={tmActive ? "page" : undefined}
+          aria-label={tmBadge ? `Trader Media — ${tmBadge} complete` : "Trader Media"}
+          title="Trader Media"
+        >
+          <span className="nav-icon" aria-hidden="true">
+            <IconLayers size={17} />
+          </span>
+          <span className="nav-label">Trader Media</span>
+          {tmBadge && (
+            <span className="nav-sub" aria-hidden="true">
+              {tmBadge}
+            </span>
+          )}
+        </Link>
+      </div>
+
+      <div className="nav-section">
+        <div className="nav-section-label">Personal</div>
+
+        <Link
+          href="/founder-os"
+          className={`nav-item${foActive ? " active" : ""}`}
+          aria-current={foActive ? "page" : undefined}
+          aria-label={foBadge ? `Founder OS — ${foBadge}` : "Founder OS"}
+          title="Founder OS"
+        >
+          <span className="nav-icon" aria-hidden="true">
+            <IconTasks size={17} />
+          </span>
+          <span className="nav-label">Founder OS</span>
+          {foBadge && (
+            <span className="nav-sub" aria-hidden="true">
+              {foBadge}
+            </span>
+          )}
+        </Link>
+      </div>
 
       <div className="sidebar-footer">
         <button

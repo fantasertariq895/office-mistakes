@@ -199,6 +199,25 @@ p {
   color: var(--text-subtle);
 }
 
+.nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  padding: 14px 9px 4px;
+}
+
+.nav-section-label:first-child {
+  padding-top: 4px;
+}
+
 .nav-item {
   display: flex;
   align-items: center;
@@ -354,6 +373,7 @@ p {
   }
   .sidebar-brand-copy,
   .nav-label,
+  .nav-section-label,
   .sidebar-note {
     display: none;
   }
@@ -1561,8 +1581,13 @@ p {
   margin-top: 1px;
 }
 
-.kpi.alert .kpi-value {
+.kpi.alert .kpi-value,
+.kpi.danger .kpi-value {
   color: var(--danger);
+}
+
+.kpi.success .kpi-value {
+  color: var(--success);
 }
 
 .callout {
@@ -3063,4 +3088,510 @@ p {
   .voice-live {
     max-width: none;
   }
+}
+
+/* ------------------------------------------------------------ Founder OS -- */
+
+.fo-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fo-timeline-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fo-timeline-prompt label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.fo-timeline {
+  position: relative;
+  height: 46px;
+  margin: 8px 0 18px;
+}
+
+.fo-timeline-track {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-muted);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.fo-timeline-marker {
+  position: absolute;
+  top: 12px;
+  transform: translateX(-50%);
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+
+.fo-timeline-marker::after {
+  content: "";
+  display: block;
+  width: 1px;
+  height: 8px;
+  margin: 4px auto 0;
+  background: var(--border);
+}
+
+.fo-timeline-today {
+  position: absolute;
+  top: 16px;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--surface);
+}
+
+/* Shared click-to-edit cell (Pipeline rows, Kanban card titles) */
+
+.fo-editable-cell {
+  display: block;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 5px 7px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fo-editable-cell:hover,
+.fo-editable-cell:focus-visible {
+  border-color: var(--border);
+  background: var(--surface-muted);
+}
+
+.fo-editable-placeholder {
+  color: var(--text-subtle);
+}
+
+.fo-editable-input {
+  width: 100%;
+}
+
+/* Sales Pipeline */
+
+.fo-pipeline-table {
+  display: flex;
+  flex-direction: column;
+  overflow-x: auto;
+}
+
+.fo-pipeline-add {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr auto;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  min-width: 640px;
+}
+
+.fo-pipeline-head,
+.fo-pipeline-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.9fr 0.9fr 1fr 1.4fr auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 760px;
+}
+
+.fo-pipeline-head {
+  padding: 8px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  border-bottom: 1px solid var(--border);
+}
+
+.fo-pipeline-row {
+  padding: 6px 14px;
+}
+
+.fo-pipeline-date {
+  min-width: 0;
+}
+
+/* Master Task List (Kanban) */
+
+.fo-board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(220px, 1fr));
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px 14px 14px;
+}
+
+.fo-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.fo-column-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  padding: 0 2px;
+}
+
+.fo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 11px;
+  background: var(--surface);
+}
+
+.fo-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.fo-card-title {
+  flex: 1;
+  white-space: normal;
+}
+
+.fo-card-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fo-card-date {
+  font-size: 12.5px;
+}
+
+/* Do This Now */
+
+.fo-donow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fo-donow-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 9px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fo-donow-row:hover {
+  background: var(--surface-hover);
+}
+
+.fo-donow-title {
+  flex: 1;
+  font-size: 13.5px;
+}
+
+@media (max-width: 900px) {
+  .fo-board {
+    grid-template-columns: repeat(5, 220px);
+  }
+}
+
+/* ------------------------------------------------- Founder OS, Phase 2/3 -- */
+
+.fo-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fo-timeline-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fo-timeline-prompt label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Generic table, shared by SimpleTable, Revenue Forecast, Marketing Calendar */
+
+.fo-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.fo-table-head,
+.fo-table-row {
+  display: grid;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 14px;
+  min-width: 640px;
+}
+
+.fo-table-head {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  border-bottom: 1px solid var(--border);
+}
+
+.fo-table-row {
+  border-bottom: 1px solid var(--border);
+}
+
+.fo-table-row:last-child {
+  border-bottom: none;
+}
+
+/* Text block groups (BMC, ICP, Brand, Hiring, Funding, Roadmap) */
+
+.fo-textblock-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fo-textblock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fo-textblock label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.fo-textblock-input {
+  resize: vertical;
+  min-height: 44px;
+  font-family: inherit;
+}
+
+/* Opportunity Scorecard */
+
+.fo-score-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fo-score-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.fo-score-row label {
+  font-size: 13.5px;
+}
+
+.fo-score-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: right;
+}
+
+/* Checklist item "why it matters" note */
+
+.fo-checklist-explanation {
+  display: block;
+  margin-top: 3px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+/* Document library (SOPs, Templates) */
+
+.fo-document-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fo-document {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.fo-document-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fo-document-title {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.fo-document-body {
+  resize: vertical;
+  min-height: 70px;
+  font-family: inherit;
+  white-space: pre-wrap;
+}
+
+/* Decision Log */
+
+.fo-log-add {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.fo-log-add > :first-child,
+.fo-log-add > button {
+  grid-column: 1 / -1;
+}
+
+.fo-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fo-log-entry {
+  padding: 10px 0;
+  align-items: flex-start;
+}
+
+.fo-log-entry-main {
+  flex: 1;
+}
+
+.fo-log-entry-decision {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.fo-log-entry-date {
+  font-size: 12px;
+  color: var(--text-subtle);
+  margin-top: 1px;
+}
+
+.fo-log-entry-detail {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* Finance */
+
+.fo-warning {
+  margin: 10px 14px 0;
+  font-size: 12.5px;
+  color: var(--danger);
+}
+
+.fo-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.fo-pricing-tier {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 13px;
+}
+
+.fo-pricing-tier h3 {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.fo-kpi-inputs {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.fo-kpi-inputs label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  min-width: 140px;
+}
+
+.fo-kpi-defs {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.fo-kpi-hidden-note {
+  grid-column: 1 / -1;
+  font-size: 12.5px;
+  color: var(--text-subtle);
+}
+
+/* Weekly Planner */
+
+.fo-planner-heading {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  margin-bottom: 6px;
+}
+
+/* Master 90-day Plan */
+
+.fo-plan-rail-days {
+  display: block;
+  font-size: 10.5px;
+  color: var(--text-subtle);
+  margin-top: 1px;
 }

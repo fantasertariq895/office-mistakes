@@ -270,6 +270,20 @@ export default function TrafficBillingPage() {
   const thisMonth = localMonthKey();
   const thisMonthStarted = (data?.runs ?? []).some((r) => r.month === thisMonth);
 
+  // Recurring by default: the current month starts itself the moment the
+  // page loads, so there's nothing to remember to click each 1st. History
+  // isn't lost by this — every month is its own permanent run row (see
+  // TrafficBillingRun in prisma/schema.prisma), so auto-starting a new
+  // month never touches a previous one, completed or not — every past
+  // month stays exactly where it already was, selectable from the month
+  // dropdown. A Vercel Cron backstop (app/api/cron/traffic-billing-monthly)
+  // covers the case where nobody opens the app on the 1st itself.
+  useEffect(() => {
+    if (!data || phases.length === 0 || thisMonthStarted || starting) return;
+    void startMonth(thisMonth);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, phases.length, thisMonthStarted, starting, thisMonth]);
+
   if (workspace.error && !data) {
     return (
       <div className="page">

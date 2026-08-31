@@ -401,3 +401,290 @@ model Settings {
   theme                String   @default("light") // light | dark
   updatedAt            DateTime @updatedAt
 }
+
+/* -------------------------------------------------------------- Founder OS --
+ * Phase 1 of a personal-side workspace (Dashboard, Sales Pipeline, Master
+ * Task List) in the "Personal" sidebar group. Total isolation from
+ * Commission, ChecklistItem, Task, and the Traffic Billing / Trader Media
+ * tables — own tables, own API/lib/component trees, mirroring Traffic
+ * Billing / Trader Media. More modules land here in later phases as
+ * additional Founder-prefixed tables.
+ */
+
+model FounderPipelineContact {
+  id            Int       @id @default(autoincrement())
+  name          String
+  company       String?
+  /** Free text — "LinkedIn" / "Email" / "Referral" / etc. No fixed enum. */
+  channel       String?
+  /** Calendar day, UTC-anchored like Task.dueDate — see lib/date.ts. */
+  dateContacted DateTime?
+  status        String    @default("contacted") // contacted | replied | call_booked | proposal_sent | closed | no_response
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status])
+}
+
+model FounderTask {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  status      String    @default("not_started") // not_started | in_progress | waiting | completed | blocked
+  priority    String    @default("medium") // critical | high | medium | low
+  dueDate     DateTime?
+  /** Manual ordering within a Kanban column. */
+  sortOrder   Int       @default(0)
+  /** Monday-dated week key ("2026-08-24") if picked for the Weekly Planner, else null. */
+  plannedForWeek String?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([status])
+  @@index([priority])
+}
+
+/** Singleton — Day 1 of the 90-day runway, set once in-app, never hardcoded. */
+model FounderSettings {
+  id        Int       @id @default(1)
+  startDate DateTime?
+  updatedAt DateTime  @updatedAt
+}
+
+/* --------------------------------------------------- Founder OS, Phase 2/3 --
+ * The remaining 17 modules from claude-code-prompt-founder-os.md. Several
+ * genuinely different modules share one generic table on purpose (see each
+ * model's comment) rather than getting a bespoke model apiece — this is a
+ * personal single-user planning tool, not a product, and the source doc's
+ * modules are mostly "a few labeled fields" or "a short table," which a
+ * generic key/section model represents faithfully without 17 near-identical
+ * models. Where a module has real structure worth typing explicitly
+ * (competitors, costs, risks, tech stack) it still gets its own model.
+ */
+
+/**
+ * Generic single-value text field, keyed and grouped by `section`. Backs:
+ * Business Model Canvas (section "bmc", 9 keys), Ideal Customer Profile
+ * (section "icp", 7 keys), Brand & Website homepage copy (section "brand",
+ * 5 keys + a site-map note per page), Hiring & Team notes (section
+ * "hiring"), Funding Notes (section "funding", 1 key), and the 12-Month
+ * Roadmap (section "roadmap", one key per month). Seeded with real content
+ * from the source doc where given; `content` starts blank where the doc
+ * says "the founder fills this in."
+ */
+model FounderTextBlock {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  section   String
+  label     String
+  content   String?
+  sortOrder Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+/** Business Opportunity Scorecard — 9 editable 1-10 scores, overall is computed, not stored. */
+model FounderScore {
+  id        Int    @id @default(autoincrement())
+  key       String @unique
+  label     String
+  score     Int    @default(5) // 1-10
+  sortOrder Int    @default(0)
+}
+
+/** Competitor matrix row. Seeded with the 5 real competitors from the source doc. */
+model FounderCompetitor {
+  id             Int     @id @default(autoincrement())
+  name           String
+  service        String?
+  price          String?
+  targetCustomer String?
+  strengths      String?
+  weaknesses     String?
+  positioning    String?
+  opportunity    String?
+  isCustom       Boolean @default(false)
+  sortOrder      Int     @default(0)
+}
+
+/** Startup cost tracker row. Seeded with the $2,000 CAD budget table from the source doc. */
+model FounderCostItem {
+  id        Int     @id @default(autoincrement())
+  name      String
+  type      String // one_time | recurring
+  amountCad Float
+  isCustom  Boolean @default(false)
+  sortOrder Int     @default(0)
+}
+
+/** Revenue forecast row, one per month 1-12. Editable, seeded at zero. */
+model FounderRevenueMonth {
+  id                  Int   @id @default(autoincrement())
+  monthNumber         Int   @unique // 1-12
+  clients             Int   @default(0)
+  avgRevenuePerClient Float @default(0)
+  costOfDelivery      Float @default(0)
+}
+
+/** Pricing tier. Seeded with 3 blank packages, the $100-200/user/month competitor benchmark noted in the label. */
+model FounderPricingTier {
+  id          Int     @id @default(autoincrement())
+  name        String // Basic | Professional | Premium
+  priceCad    Float?
+  description String?
+  sortOrder   Int     @default(0)
+}
+
+/** Tech stack tracker row. Seeded with the cheap/free tools the source doc names. */
+model FounderTechStackItem {
+  id        Int     @id @default(autoincrement())
+  tool      String
+  purpose   String?
+  costCad   Float?
+  priority  String  @default("medium") // critical | high | medium | low
+  status    String  @default("not_set_up") // not_set_up | set_up
+  isCustom  Boolean @default(false)
+  sortOrder Int     @default(0)
+}
+
+/** Risk register row. Seeded with the 3 risks named in the source doc. */
+model FounderRiskItem {
+  id          Int     @id @default(autoincrement())
+  risk        String
+  probability String  @default("medium") // low | medium | high
+  impact      String  @default("medium") // low | medium | high
+  prevention  String?
+  backupPlan  String?
+  isCustom    Boolean @default(false)
+  sortOrder   Int     @default(0)
+}
+
+/** One week of the 90-day outreach/content calendar. Seeded blank for weeks 1-13. */
+model FounderMarketingWeek {
+  id               Int     @id @default(autoincrement())
+  weekNumber       Int     @unique
+  plannedOutreach  Int?
+  plannedContent   String?
+  notes            String?
+}
+
+/**
+ * Generic checklist, keyed. Backs the Legal & Compliance Checklist (key
+ * "legal") and the First Customer Plan (key "first-customer", day-by-day
+ * then week-by-week). Deliberately its own table, not ChecklistItem —
+ * lib/monthly-reset.ts unticks every ChecklistItem with no commission
+ * filter, and neither a legal checklist nor a first-customer plan should
+ * ever be silently wiped on the 1st.
+ */
+model FounderChecklist {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  title String
+
+  items FounderChecklistItem[]
+}
+
+model FounderChecklistItem {
+  id          Int       @id @default(autoincrement())
+  checklistId Int
+  text        String
+  /** "Why it matters" note, shown under the item. */
+  explanation String?
+  /** "Day 1", "Week 2-4", etc — null for items with no day/week grouping. */
+  dayLabel    String?
+  done        Boolean   @default(false)
+  doneAt      DateTime?
+  isCustom    Boolean   @default(false)
+  sortOrder   Int       @default(0)
+
+  checklist FounderChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+
+  @@index([checklistId])
+}
+
+/**
+ * Named document, keyed and grouped by `section`. Backs the Operations/SOPs
+ * library (section "sop") and the Document Templates library (section
+ * "template"). Freely addable in the app (isCustom rows have no seed key).
+ */
+model FounderDocument {
+  id        Int      @id @default(autoincrement())
+  key       String?  @unique
+  section   String // sop | template
+  title     String
+  content   String?
+  isCustom  Boolean  @default(false)
+  sortOrder Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+/** Decision Log entry. Starts empty — this is the founder's own running record. */
+model FounderLogEntry {
+  id           Int      @id @default(autoincrement())
+  decision     String
+  reasoning    String?
+  alternatives String?
+  outcome      String?
+  createdAt    DateTime @default(now())
+}
+
+/**
+ * The master 90-day execution plan, as one continuous phase-by-phase,
+ * step-by-step checklist — same rail/progress-bar/sequential-navigation
+ * shape as TrafficBillingPhase/Step and TraderMediaPhase/Step, but
+ * deliberately simpler: this is a one-time journey (register the business →
+ * build the site → outreach → close the first client), not a recurring
+ * SOP, so there's no run/week dimension and no separate state table — a
+ * step's state lives directly on the row. 13 phases, one per week of the
+ * 90-day plan, folding in the Legal checklist's real requirements and the
+ * Access/tooling needs at the point in the plan they actually come up,
+ * rather than leaving them scattered across separate tabs.
+ */
+model FounderPlanPhase {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  number    Int
+  title     String
+  intro     String?
+  /** Display-only, e.g. "Days 1-7". */
+  dayRange  String?
+  sortOrder Int      @default(0)
+  isCustom  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  steps    FounderPlanStep[]
+  mistakes FounderPlanMistake[]
+}
+
+model FounderPlanStep {
+  id         Int       @id @default(autoincrement())
+  phaseId    Int
+  key        String    @unique
+  groupLabel String?
+  text       String
+  /** JSON array of reference bullets, not tickable. */
+  notes      String?
+  state      String    @default("open") // open | done | na
+  note       String?
+  doneAt     DateTime?
+  isHighRisk Boolean   @default(false)
+  isCustom   Boolean   @default(false)
+  sortOrder  Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  phase FounderPlanPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+
+  @@index([phaseId])
+}
+
+model FounderPlanMistake {
+  id        Int     @id @default(autoincrement())
+  phaseId   Int?
+  text      String
+  sortOrder Int     @default(0)
+  isCustom  Boolean @default(false)
+
+  phase FounderPlanPhase? @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+
+  @@index([phaseId])
+}

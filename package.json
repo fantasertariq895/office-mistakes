@@ -16,6 +16,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:seed-traffic-billing": "tsx prisma/seed-traffic-billing.ts",
     "db:seed-trader-media": "tsx prisma/seed-trader-media.ts",
+    "db:seed-founder-os": "tsx prisma/seed-founder-os.ts",
+    "db:seed-founder-plan": "tsx prisma/seed-founder-plan.ts",
     "db:DANGER-erase-all-tasks-and-mistakes-then-reseed": "prisma db push --force-reset --accept-data-loss && tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "setup": "prisma generate && prisma db push && tsx prisma/seed.ts",

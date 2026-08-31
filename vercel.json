@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/trader-media-weekly",
       "schedule": "0 3 * * 1"
+    },
+    {
+      "path": "/api/cron/traffic-billing-monthly",
+      "schedule": "0 3 1 * *"
     }
   ]
 }

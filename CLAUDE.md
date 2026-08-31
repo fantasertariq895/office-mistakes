@@ -34,13 +34,15 @@ the original SQLite file approach could not survive deployment at all.
   `/api/board` return real data.
 - **Needs verification, not confirmed in this session:**
   - Whether `CRON_SECRET` is actually set in Vercel's environment variables.
-    Without it, `/api/cron/monthly-reset` returns 500 when Vercel's daily
-    cron fires, and likewise `/api/cron/trader-media-weekly` (added later,
-    Monday-only) returns 500 too — both use the same bearer-token check. Both
-    are backstops only: the monthly reset's primary trigger is every
-    `/api/board` load, and the weekly Trader Media run's primary trigger is
-    every `/trader-media` page load — both work regardless of this var, but
-    the backstops themselves are unverified.
+    Without it, three cron routes all return 500 when Vercel's schedule
+    fires — `/api/cron/monthly-reset` (daily), `/api/cron/trader-media-weekly`
+    (Monday-only), and `/api/cron/traffic-billing-monthly` (1st-of-the-month
+    only) — all three use the same bearer-token check. All three are
+    backstops only: their primary triggers are, respectively, every
+    `/api/board` load, every `/trader-media` page load, and every
+    `/traffic-billing` page load — all work regardless of this var, but the
+    backstops themselves are unverified. Also worth checking Vercel's cron
+    job count against your plan's limit now that there are three.
   - Whether `FORCE_PIN`/`INITIAL_PIN` are set. **They should NOT be** — the
     user explicitly said "don't set any pin for this project." If a future
     session finds them set, that was not an intentional instruction and is
@@ -174,6 +176,35 @@ next month starting, and deleting a step/phase/run cascades with no orphans.
 Test runs created during that check were deleted afterwards — the SOP ships
 seeded with **zero runs**, so the first "Start <month>" is the user's.
 
+**The current month starts itself — no manual "Start" needed, matching
+Trader Media's weekly recurrence.** The user explicitly asked for this once
+September 2026 was about to arrive: `app/traffic-billing/page.tsx`
+auto-calls `startMonth` on load whenever the viewer's current month
+(`localMonthKey`) has no run yet. Every month is its own permanent
+`TrafficBillingRun` row, so this never touches a previous month, completed
+or not — **every past month stays exactly where it was, selectable from the
+month dropdown, forever.** A Vercel Cron backstop
+(`/api/cron/traffic-billing-monthly`, 1st-of-the-month-only in
+`vercel.json`, `ensureThisMonthRun` + `serverCurrentMonthKey` in
+`lib/traffic-billing/{server,month}.ts`) covers the case where nobody opens
+the app on the 1st itself — identical shape to the monthly checklist
+reset's and Trader Media's own backstops, needs the same unverified
+`CRON_SECRET`.
+
+**Verified directly against the live, shared database** (not just
+reasoned through): manually POSTing next month's run proved August stayed
+completed with all 331 steps still done and September started fully open
+and idempotent — then that test run was deleted immediately, because
+`loadWorkspace()` defaults to the *newest* run when no month is specified,
+and creating next month's run even one day early would have made the page
+show it prematurely, ahead of the viewer's own local calendar. That's not a
+bug introduced by this change — it's the same trade-off Trader Media's
+cron backstop already accepts (a backstop has no viewer to be precise for)
+— just worth knowing if a future session needs to test this again: test
+against a *past* month, or clean up immediately, never leave a real
+next-month run sitting in the shared database before its actual month
+starts.
+
 ## Trader Media workspace (third tab, `/trader-media`)
 
 A weekly (Monday-anchored, spilling into Tuesday for the exec deck)
@@ -243,6 +274,195 @@ interactive, and the setup checklist is provably unaffected by run
 mutations. Test runs and the test setup-toggle from that check were removed
 afterward — ships with **zero runs** and all setup items unchecked, so the
 first "Start <week>" and the first access-item tick are the user's.
+
+## Founder OS workspace (fourth tab, `/founder-os`, sidebar "Personal" group)
+
+A **personal** side-venture workspace — planning/operating a Managed IT
+Services company (Mississauga/GTA, offshore delivery team) the user is
+starting alongside their day job. Source spec:
+[claude-code-prompt-founder-os.md](claude-code-prompt-founder-os.md), a
+20-module build prompt originally written for a standalone app. Deliberately
+folded into this same app instead — one login, one dashboard — rather than a
+second deployment, per the user's explicit choice.
+
+**The sidebar is now two labeled groups, not a flat list**: "Work" (Home,
+Traffic Billing, Trader Media — untouched) and "Personal" (Founder OS). This
+is a real separation, not cosmetic — Founder OS's data has zero contact with
+everything above it, same isolation as Traffic Billing/Trader Media from each
+other and from Commission/Task/ChecklistItem.
+
+**All 20 modules from the source doc are built**, grouped into **11 tabs**
+behind Founder OS's one sidebar entry (`Tabs`/`TabPanel` from
+`components/ui.tsx`, exactly as `app/settings/page.tsx` already uses them —
+no more sidebar rows, just more tabs in this one switcher):
+
+| Tab | Modules inside |
+|---|---|
+| Dashboard | 90-day runway timeline, stat tiles, "Do This Now" |
+| Strategy | Opportunity Scorecard, Competitor Matrix, ICP, Business Model Canvas, Risk Register, Funding Notes |
+| Finance | Startup cost tracker, revenue forecast, pricing tiers, KPI calculator |
+| Legal | Legal & Compliance Checklist |
+| Brand & Website | Homepage copy + site map, Tech Stack Tracker |
+| Sales Pipeline | CRM |
+| Growth | 90-day marketing calendar, First Customer Plan |
+| Task List | Kanban board |
+| Operations | SOPs library, Document Templates, Hiring & Team notes |
+| Planning | Weekly Planner, 12-Month Roadmap, Decision Log |
+| KPI Dashboard | Financial / Sales / Customer metrics |
+
+**Several genuinely different modules share one generic table on purpose** —
+this is a personal single-user tool, not a product, and most of these
+modules are "a few labeled text fields" or "a short table" underneath:
+- `FounderTextBlock` (key + section + label + content) backs BMC, ICP, Brand
+  copy, Hiring notes, Funding Notes, and the 12-Month Roadmap — 6 different
+  modules, one table, rendered by one shared component, `TextBlockGroup`.
+- `FounderChecklist`/`FounderChecklistItem` backs both the Legal checklist
+  and the First Customer Plan (day/week-grouped via `dayLabel`), rendered by
+  `FounderChecklistPanel` — deliberately its own table, not the shared
+  `ChecklistItem` (which `lib/monthly-reset.ts` wipes monthly; a legal
+  checklist must never be).
+- `FounderDocument` (key? + section + title + content) backs both the SOPs
+  library and the Document Templates library, rendered by `DocumentLibrary`.
+- `SimpleTable` (`components/founder-os/SimpleTable.tsx`) is a generic
+  column-configured CSS-grid table reused for the Competitor Matrix, Tech
+  Stack Tracker, and Risk Register — three bespoke Table+Row pairs would
+  have been near-identical code.
+Modules with genuine distinct structure worth a dedicated model kept one:
+`FounderCompetitor`, `FounderCostItem`, `FounderRevenueMonth`,
+`FounderPricingTier`, `FounderTechStackItem`, `FounderRiskItem`,
+`FounderMarketingWeek`, `FounderScore`, `FounderLogEntry`.
+
+**Seed content is real business data from the source doc, not placeholders**
+(`lib/founder-os/seed-data.ts`) — the 5 real competitors, the $2,000 CAD
+budget table, the 30/60/90 plan, the Legal checklist's actual Ontario
+requirements, etc. The one deliberate exception: the **Opportunity
+Scorecard seeds every score at a neutral 5**, never a fabricated "good"
+number — the source doc is explicit that inflating these to feel
+encouraging is the one thing not to do; the founder's own honest judgment
+is the point.
+
+**Weekly Planner reuses `FounderTask.plannedForWeek`** (a Monday-dated week
+key, same format Trader Media uses) rather than a separate table — "this
+week's plan" is just a filtered, capped (6-item) view of the same task list
+the Kanban board already manages. `lib/founder-os/week.ts` is Founder OS's
+own copy of the week-key math, not imported from `lib/trader-media/week.ts`
+— same cross-feature isolation already documented for every other pair of
+sibling features in this app.
+
+**KPI Dashboard shows only what's relevant pre-revenue** — Customer's
+"Retention" tile is replaced with an explanatory note until at least one
+client is closed, per the source doc's explicit instruction not to show
+metrics that don't apply yet.
+
+**`FounderSettings.startDate` (the 90-day runway's "Day 1") ships null.** The
+user hadn't given a real date as of this build — the Dashboard shows a
+"when does Day 1 start?" prompt (a date input, no modal) until it's set.
+**Don't assume or backfill a date** — ask, or leave it null.
+
+**Architecture, mirroring Traffic Billing / Trader Media exactly**: own
+tables (`Founder*` prefix in `prisma/schema.prisma`), own
+`app/api/founder-os/**`, own `lib/founder-os/`, own `components/founder-os/`.
+`FounderTask` is a deliberately separate model from the existing bare `Task`
+— a 5-value status set (adds Blocked) and 4-value priority set (adds
+Critical) that the Home-page Tasks feature doesn't have; extending `Task`
+instead would have scope-crept an unrelated feature.
+
+**No drag-and-drop, on purpose.** Nothing else in this app uses DnD (no
+library is installed), and its established interaction language everywhere
+is "click a control, immediate change" (status `<select>` on `TaskRow`).
+Kanban cards move via a `.status-select` populated from
+`FOUNDER_TASK_STATUSES` — a direct jump to any of the 5 columns, which also
+better fits Blocked being reachable from/to any column than a linear
+next/prev control would.
+
+**No `<table>` element, on purpose** — this app has zero `<table>` elements
+anywhere; the Sales Pipeline "table" is a CSS-grid row/header
+(`.fo-pipeline-row`/`.fo-pipeline-head`), consistent with that.
+
+**Pipeline cells use a new `EditableCell` component, not `InlineEdit`.**
+`InlineEdit`'s visible Save/Cancel buttons are too heavy at 7-column table
+density and break row alignment when only one cell is being edited.
+`EditableCell` keeps the same keyboard contract (Enter=save, Escape=cancel,
+autofocus) but also commits on blur, with a `committedRef` guard against
+double-firing when Enter's `setEditing(false)` triggers a trailing blur on
+the about-to-unmount input. **Verified directly with a dispatched
+`KeyboardEvent`** that Enter-to-commit genuinely works — worth knowing if a
+future session's own browser-automation tooling seems to show Enter
+"not committing": that was this session's own `computer.key("Return")`
+simulation racing the click-triggered autofocus, not an app bug — a real
+keydown in a real browser has no such race.
+
+**Dashboard's stat tiles and "Do This Now" were designed additive, and Finance
++ Legal proved it out.** `FoStatTile[]`/`buildStatTiles()` (in
+`lib/founder-os/server.ts`) took two more optional-input fields
+(`oneTimeSpendCad`, `legalTotal`/`legalDone`) and two more `push()` lines to
+grow from 3 tiles to 5 — `StatsStrip` itself was never touched. `loadDashboard()`
+now also queries `FounderCostItem` (one-time sum) and the `legal`
+`FounderChecklist` (done/total) alongside the original pipeline/task queries.
+The same pattern is ready for any future module that wants a Dashboard tile —
+extend the input type, push one more tile, done.
+
+**Sidebar badge = "Day N"**, nothing when `startDate` is unset — reuses the
+`/api/founder-os/settings` endpoint rather than adding a summary route, since
+the badge needs nothing beyond `startDate` (unlike Traffic Billing/Trader
+Media's percent-through-steps aggregate).
+
+Verified end-to-end against the live API and the rendered UI, across both
+build passes: settings PATCH round-trips a date and rejects garbage;
+pipeline/task/cost/risk/score POST and PATCH reject a missing required field
+and invalid status/priority/type/level/1–10-range values; task status →
+`completed` sets `completedAt`, anything else clears it; Kanban
+move-via-select verified interactively (card moved into Blocked); a legal
+checklist item toggle correctly moved the Dashboard's `legal_checklist` tile
+from 0% to 14% (1/7); dashboard with zero rows returns exactly 3 (Phase 1) or
+5 (with Finance/Legal data present) stat tiles, never a missing/extra one;
+`/api/tasks` and `/api/contacts` counts unchanged before/after all of the
+above — zero cross-contact confirmed both times. Responsive-checked at
+375/768/~800px: sidebar collapses to the 62px icon rail with both section
+labels hidden, every table/board scrolls inside its own container, never the
+page body. Test data removed afterward both times — ships with **zero
+contacts, zero tasks, all 9 scores at neutral 5, the Legal and First Customer
+Plan checklists fully unchecked, and no start date set**.
+
+### The master 90-day Plan (`FounderPlan*` tables, "Plan" tab — first tab, ahead of Dashboard)
+
+The user explicitly asked for this after seeing the tabbed-dashboard build:
+they wanted the same "start to end, step by step" checklist experience
+Traffic Billing and Trader Media give — a phase rail, a progress bar,
+sequential Previous/Next navigation — not just scattered data-entry tabs.
+This is that: **13 phases (one per week), 36 steps, 6 mistakes**, built by
+expanding the source doc's own Days 1–30/31–60/61–90 breakdown
+(`lib/founder-os/plan-seed.ts`) to weekly granularity and folding the Legal
+checklist's real requirements and tooling/access needs in at the point in
+the journey they actually come up — Week 1 opens with trade name
+registration and the business bank account, Week 10 is proposals *and* the
+Pakistan contractor agreement, Week 12 is closing the first client *and* the
+HST-registration reminder.
+
+**Architecturally simpler than Traffic Billing/Trader Media on purpose**:
+this is a one-time journey, not a recurring SOP, so there's no run/week
+wrapper and no separate step-state table — `FounderPlanStep.state`/`note`/
+`doneAt` live directly on the row. `lib/founder-os/plan-progress.ts` is the
+progress math without the `StateMap` layer those other two features need;
+`PlanPanel`/`PlanRail`/`PlanCard`/`PlanStepRow`
+(`components/founder-os/plan/`) reuse the exact `.tb-*` CSS classes
+verbatim, same as Trader Media reused Traffic Billing's.
+
+This is deliberately **separate from, not a replacement for**, the flat
+Legal Checklist and First Customer Plan tabs (`FounderChecklist`/
+`FounderChecklistItem`, under Legal and Growth) — those stay as their own
+quick-reference checklists; the Plan tab is the sequenced walkthrough
+version that points back to them and to Finance/Brand/Operations for the
+supporting detail. Two different views of overlapping content, on purpose,
+matching how the user compared it to Traffic Billing/Trader Media
+specifically.
+
+Verified: bulk phase-state (mark a week N/A) correctly updated all 6 of its
+steps and cleanly reverted; invalid step state rejected 400; the 2 global
+("applies throughout") vs. 4 phase-scoped mistakes split matches the seed
+exactly; responsive-checked at 375px with no page-body overflow (inherits
+the already-audited `.tb-layout` rules). Ships with all 36 steps open —
+first tick is the user's.
 
 ## Architecture decisions and why (read before changing these)
 

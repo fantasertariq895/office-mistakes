@@ -54,3 +54,15 @@ export function previousMonth(month: string): string {
     ? `${year - 1}-12`
     : `${year}-${String(m - 1).padStart(2, "0")}`;
 }
+
+/**
+ * "2026-08" using UTC getters — for the cron backstop only (see
+ * app/api/cron/traffic-billing-monthly), which has no viewer to be
+ * faithful to. Never use this for anything user-facing: localMonthKey is
+ * the one that matters when a person is actually looking at the screen —
+ * same split lib/trader-media/week.ts's serverCurrentWeekKey documents for
+ * the identical reason.
+ */
+export function serverCurrentMonthKey(d = new Date()): string {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
