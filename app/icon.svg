@@ -1,0 +1,19 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .bg { fill: #5b5bd6; }
+    .mark { stroke: #ffffff; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #9b9bf0; }
+      .mark { stroke: #1b1b1a; }
+    }
+  </style>
+  <rect class="bg" x="2" y="2" width="60" height="60" rx="16" />
+  <path
+    class="mark"
+    d="M18 33.5 L27 42.5 L46 21.5"
+    fill="none"
+    stroke-width="6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>
