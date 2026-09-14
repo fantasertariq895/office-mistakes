@@ -48,6 +48,17 @@
  * this session raised (a self-corrected "Tyler" mention in the recording)
  * unresolved in setup-items.ts — do not change that contact assignment based
  * on this transcript alone.
+ *
+ * Third pass: Phase 2 (the 3 source tabs) was restructured from one big
+ * step per tab with a wall of reference-note bullets into one tickable step
+ * per column-level action (which columns get pasted, which are formulas and
+ * must not be touched, which need a manual date entered) — the user
+ * specifically wanted each of those to be its own checkbox, not buried in
+ * untickable notes. Keys s02/s03/s04 were repurposed as the first step of
+ * each tab (to preserve any historical run state tied to them) with the
+ * rest of each tab's actions added as new sibling steps (s02b.. / s03b.. /
+ * s04b..). Only genuinely non-actionable background ("what is PIO", source,
+ * access) stays as notes.
  */
 
 export type SopStepSeed = {
@@ -105,53 +116,116 @@ export const SOP_PHASES: SopPhaseSeed[] = [
     intro:
       "There are only 3 raw-data reports to update every week — everything else largely flows from these: PIO Data, Salesforce/Pipeline, and Programmatic Data.",
     steps: [
+      // --- Update PIO Data: one tickable step per column-level action ---
       {
         key: "s02",
         groupLabel: "Update PIO Data",
-        text: "Update the PIO Data tab from the latest Placements export",
-        highRisk: true,
+        text: "Download the new Placements export (Finance and Billing → Data Export → \"Pipeline Booked\")",
         notes: [
           "What is PIO? Campaigns that are already booked — GM signs a campaign, AdOps reserves impressions/ad units, it gets booked, and it appears in PIO. High-confidence revenue: \"We know this money is coming in.\"",
           "Source: the third-party Placements dashboard — manually pulled, unlike the other two reports.",
-          "Raw exported data runs approximately through Column Z; columns after that are formulas.",
-          "The file maintains two comparison weeks — shift them forward: remove the oldest week, the previous current week becomes the previous week.",
-          "Download the new Placements report, paste the raw data through approximately Column Z, and enter the appropriate dates in the manual date columns.",
-          "Copy/drag formulas for the new rows where necessary.",
-          "Do not overwrite the formula columns.",
-          "Navigation on the Placements site: Finance and Billing → Data Export → \"Pipeline Booked\" report — it refreshes nightly around 8pm, so pulling first thing Monday gets you the prior night's close.",
+          "Refreshes nightly around 8pm, so pulling first thing Monday gets you the prior night's close.",
           "The Placements login is a shared team credential (not an individual account) — ask a teammate for it rather than requesting your own access.",
           "If login asks for a verification code, it goes to whichever phone number or email is on the shared account — if you're blocked waiting on it, say so on Slack rather than sitting on it.",
         ],
       },
       {
+        key: "s02b",
+        groupLabel: "Update PIO Data",
+        text: "Shift the two comparison weeks forward — remove the oldest week; last week's \"current\" column becomes this week's \"previous\" column",
+      },
+      {
+        key: "s02c",
+        groupLabel: "Update PIO Data",
+        text: "Paste the new raw data into columns A through approximately Z only — leave everything after Column Z untouched, those are formulas",
+        highRisk: true,
+      },
+      {
+        key: "s02d",
+        groupLabel: "Update PIO Data",
+        text: "Enter this week's date in the manual date columns",
+      },
+      {
+        key: "s02e",
+        groupLabel: "Update PIO Data",
+        text: "Drag the formula columns (everything after Column Z) down to cover the newly pasted rows",
+        highRisk: true,
+        notes: [
+          "Do not overwrite the formula columns themselves — only extend them down to the new rows.",
+        ],
+      },
+      // --- Update Salesforce / Pipeline ---
+      {
         key: "s03",
         groupLabel: "Update Salesforce / Pipeline",
-        text: "Update the Salesforce / Pipeline tab from the latest Salesforce report",
-        highRisk: true,
+        text: "Get the latest Salesforce / media pipeline report",
         notes: [
           "What is this data? Revenue that is not booked yet — opportunities AEs believe may happen, with an opportunity/campaign name, expected amount, probability, start/end dates.",
           "Source: normally a Salesforce report. Yuvika lost Salesforce access after migration — Sharma has access and has been manually exporting it, and set up an automated Monday email report. Get yourself added to that forwarding.",
-          "The raw report begins around Column CE; everything to the left is largely formulas/calculations.",
-          "Delete the old raw report data from that section, then paste the entire latest Salesforce report in.",
-          "Critical check: check the bottom of the dataset and make sure formulas extend far enough to cover every new row. If the new report has more rows than the old one and formulas aren't dragged down to match, those new opportunities silently never flow through to the rest of the workbook.",
-          "Always copy the new report in, never Ctrl-X (cut) it — cutting moves the data instead of duplicating it and can silently break formulas elsewhere that reference the original range.",
-          "After pasting, move the \"Opportunity Owner\" column to the end — this tab has some legacy unused columns before it that the raw report's own column order doesn't match.",
-          "From roughly the 3rd week of the closing month onward, that month's pipeline is usually already near zero — everything's booked — so there may be nothing meaningful to update here for it that week.",
         ],
       },
       {
+        key: "s03b",
+        groupLabel: "Update Salesforce / Pipeline",
+        text: "Delete the old raw report data from Column CE onward — leave everything to the left of CE untouched, those are formulas/calculations",
+        highRisk: true,
+      },
+      {
+        key: "s03c",
+        groupLabel: "Update Salesforce / Pipeline",
+        text: "Copy — never cut (Ctrl-X) — the entire new report in, starting at Column CE",
+        highRisk: true,
+        notes: [
+          "Cutting moves the data instead of duplicating it and can silently break formulas elsewhere that reference the original range.",
+        ],
+      },
+      {
+        key: "s03d",
+        groupLabel: "Update Salesforce / Pipeline",
+        text: "Move the pasted \"Opportunity Owner\" column to the end, past this tab's legacy unused columns",
+      },
+      {
+        key: "s03e",
+        groupLabel: "Update Salesforce / Pipeline",
+        text: "Drag formulas down to cover every new row — confirm they extend as far as the new report's last row",
+        highRisk: true,
+        notes: [
+          "Critical check: if the new report has more rows than the old one and formulas aren't dragged down to match, those new opportunities silently never flow through to the rest of the workbook.",
+          "From roughly the 3rd week of the closing month onward, that month's pipeline is usually already near zero — everything's booked — so there may be nothing meaningful to update here for it that week.",
+        ],
+      },
+      // --- Update Programmatic Data ---
+      {
         key: "s04",
         groupLabel: "Update Programmatic Data",
-        text: "Update the Programmatic Data tab from the latest BERT YTD report",
-        highRisk: true,
+        text: "Get the latest BERT YTD report",
         notes: [
           "What is this data? Open Exchange, PMP/Private Marketplace, and other programmatic transaction activity. BERT captures actual revenue; the workbook projects the rest of the month from the run rate (e.g. ~$100 over 7 days → $100 ÷ 7 × 30 as an approximate monthly projection).",
           "Source: BERT, a third-party reporting/dashboard system, usually received daily. Contact Todd Graham to be added directly to the BERT distribution list rather than relying permanently on Yuvika forwarding it.",
           "Important difference from PIO: the BERT export is YTD (e.g. January → August 23), not just new incremental rows for the week — every week you replace the entire existing raw dataset with the latest complete YTD report.",
-          "Delete the old raw programmatic dataset, paste the complete latest YTD report — raw data runs approximately through Column L.",
-          "Drag formulas down to cover any newly added rows and make sure downstream pivots refresh.",
           "It's fine if the latest BERT export spills a day or two into the next month — the workbook automatically attributes those rows to the correct month, so don't wait for a report that lines up exactly with month-end.",
         ],
+      },
+      {
+        key: "s04b",
+        groupLabel: "Update Programmatic Data",
+        text: "Delete the entire old raw programmatic dataset",
+      },
+      {
+        key: "s04c",
+        groupLabel: "Update Programmatic Data",
+        text: "Paste the complete latest YTD report into columns A through approximately L only — leave everything after Column L untouched, those are formulas",
+        highRisk: true,
+      },
+      {
+        key: "s04d",
+        groupLabel: "Update Programmatic Data",
+        text: "Drag formulas down to cover any newly added rows",
+      },
+      {
+        key: "s04e",
+        groupLabel: "Update Programmatic Data",
+        text: "Confirm downstream pivots refresh correctly after the paste",
       },
     ],
   },
